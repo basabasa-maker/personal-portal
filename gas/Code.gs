@@ -13,7 +13,7 @@ const SHEET_NAMES = {
 const NOTE_HEADERS = ['id', 'title', 'content', 'read', 'created'];
 const TASK_HEADERS = ['id', 'title', 'priority', 'due', 'progress', 'status', 'note', 'created', 'completedDate', 'shopping'];
 const JOURNAL_HEADERS = ['id', 'date', 'text', 'created'];
-const DAILY_HEADERS = ['date', 'time', 'type', 'content', 'checked'];
+const DAILY_HEADERS = ['id', 'date', 'hour', 'type', 'text', 'created'];
 
 function getSheet(name) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -49,12 +49,15 @@ function doGet(e) {
     result = getTasks();
   } else if (type === 'journal') {
     result = getJournal();
+  } else if (type === 'daily') {
+    result = getDailyEntries();
   } else if (type === 'all') {
     result = {
       success: true,
       notes: getNotes().notes || [],
       tasks: getTasks().tasks || [],
       journal: getJournal().journal || [],
+      daily: getDailyEntries().daily || [],
     };
   } else {
     result = { success: false, message: 'Unknown type: ' + type };
@@ -140,6 +143,8 @@ function doPost(e) {
       return saveTasks(payload.items || []);
     } else if (type === 'journal') {
       return saveJournalItems(payload.items || []);
+    } else if (type === 'daily') {
+      return saveDailyItems(payload.items || []);
     }
     return makeResponse({ success: false, message: 'Unknown type' });
   } catch(e) {
@@ -193,6 +198,37 @@ function saveJournalItems(items) {
   return makeResponse({ success: true, type: 'journal', count: items.length });
 }
 
+function getDailyEntries() {
+  try {
+    const sheet = getSheet(SHEET_NAMES.daily);
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return { success: true, daily: [], count: 0 };
+    const headers = data[0];
+    const daily = data.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i]; });
+      obj.id = Number(obj.id);
+      obj.hour = Number(obj.hour);
+      return obj;
+    });
+    return { success: true, daily: daily, count: daily.length };
+  } catch(e) {
+    return { success: false, message: e.message };
+  }
+}
+
+function saveDailyItems(items) {
+  const sheet = getSheet(SHEET_NAMES.daily);
+  if (sheet.getLastRow() > 1) {
+    sheet.getRange(2, 1, sheet.getLastRow() - 1, DAILY_HEADERS.length).clearContent();
+  }
+  if (items.length > 0) {
+    const rows = items.map(item => DAILY_HEADERS.map(h => item[h] || ''));
+    sheet.getRange(2, 1, rows.length, DAILY_HEADERS.length).setValues(rows);
+  }
+  return makeResponse({ success: true, type: 'daily', count: items.length });
+}
+
 function makeResponse(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
@@ -211,7 +247,8 @@ function addNoteExternal(title, content) {
 function writeDailySchedule(date, entries) {
   const sheet = getSheet(SHEET_NAMES.daily);
   entries.forEach(entry => {
-    sheet.appendRow([date, entry.time, entry.type || 'plan', entry.content, 'FALSE']);
+    const id = Date.now() + Math.floor(Math.random() * 1000);
+    sheet.appendRow([id, date, entry.hour || 0, entry.type || 'plan', entry.text || entry.content, new Date().toISOString()]);
   });
   return { success: true, date: date, count: entries.length };
 }
