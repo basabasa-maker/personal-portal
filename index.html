@@ -44,12 +44,30 @@ body {
   z-index: 100;
   safe-area-inset-top: env(safe-area-inset-top);
 }
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 .header-title {
   font-size: 17px;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-align: center;
+  flex: 1;
 }
+.header-btn {
+  background: none;
+  border: none;
+  color: var(--white);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  opacity: 0.8;
+}
+.header-btn:active { opacity: 1; }
+.header-btn.spinning { animation: spin 0.8s linear; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .header-date {
   font-size: 11px;
   text-align: center;
@@ -521,7 +539,11 @@ body {
 <body>
 
 <header class="header">
-  <div class="header-title">Personal Portal</div>
+  <div class="header-row">
+    <div style="width:36px;"></div>
+    <div class="header-title">Personal Portal</div>
+    <button class="header-btn" id="reloadBtn" onclick="reloadData()" title="データを再読み込み">🔄</button>
+  </div>
   <div class="header-date" id="headerDate"></div>
 </header>
 
@@ -565,9 +587,12 @@ body {
 
   <!-- Note Tab -->
   <div class="tab-content active" id="tab-note">
-    <div class="note-search">
-      <span class="note-search-icon">🔍</span>
-      <input type="text" id="noteSearchInput" placeholder="ノートを検索...">
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <div class="note-search" style="flex:1;margin-bottom:0;">
+        <span class="note-search-icon">🔍</span>
+        <input type="text" id="noteSearchInput" placeholder="ノートを検索...">
+      </div>
+      <button onclick="openNoteForm()" style="background:var(--navy);color:var(--white);border:none;border-radius:8px;padding:0 14px;font-size:20px;cursor:pointer;flex-shrink:0;">+</button>
     </div>
     <div class="note-count" id="noteCount"></div>
     <ul class="note-list" id="noteList"></ul>
@@ -579,6 +604,21 @@ body {
 </div>
 
 <button class="task-add-fab" id="taskAddBtn" onclick="openTaskForm()">+</button>
+
+<!-- Note Form Modal -->
+<div class="modal-overlay task-form-modal" id="noteFormModal">
+  <div class="modal">
+    <h2>ノート追加</h2>
+    <label>タイトル</label>
+    <input type="text" id="noteTitleInput" placeholder="タイトルを入力">
+    <label>内容</label>
+    <textarea id="noteContentInput" placeholder="内容を入力またはコピペ" style="width:100%;height:150px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;resize:vertical;"></textarea>
+    <div class="modal-btns" style="margin-top:16px;">
+      <button class="btn-secondary" onclick="closeNoteForm()">キャンセル</button>
+      <button class="btn-primary" onclick="saveNoteForm()">保存</button>
+    </div>
+  </div>
+</div>
 <button class="settings-fab" id="settingsBtn">⚙</button>
 
 <!-- Task Form Modal -->
@@ -654,6 +694,8 @@ function init() {
   setupSearch();
   setupSettings();
   setInterval(updateHeaderDate, 60000);
+  // Initial pull from remote
+  setTimeout(() => pullFromRemote(), 500);
 }
 
 // --- Header Date ---
@@ -1189,6 +1231,35 @@ function syncTasksToRemote() {
     form.submit();
     document.body.removeChild(form);
   } catch(e) { console.error('Task sync error:', e); }
+}
+
+// --- Reload ---
+function reloadData() {
+  const btn = document.getElementById('reloadBtn');
+  btn.classList.add('spinning');
+  pullFromRemote();
+  setTimeout(() => {
+    btn.classList.remove('spinning');
+    showToast('データを更新しました');
+  }, 2000);
+}
+
+// --- Note Form ---
+function openNoteForm() {
+  document.getElementById('noteTitleInput').value = '';
+  document.getElementById('noteContentInput').value = '';
+  document.getElementById('noteFormModal').classList.add('active');
+  setTimeout(() => document.getElementById('noteTitleInput').focus(), 100);
+}
+function closeNoteForm() {
+  document.getElementById('noteFormModal').classList.remove('active');
+}
+function saveNoteForm() {
+  const title = document.getElementById('noteTitleInput').value.trim();
+  const content = document.getElementById('noteContentInput').value.trim();
+  if (!title) { showToast('タイトルを入力してください'); return; }
+  addNote(title, content || '（内容なし）');
+  closeNoteForm();
 }
 
 // --- Toast ---
