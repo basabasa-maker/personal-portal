@@ -39,10 +39,10 @@ body {
 .header {
   background: var(--navy);
   color: var(--white);
-  padding: 12px 16px 8px;
+  padding: 12px 16px 10px;
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
   position: fixed; top: 0; left: 0; right: 0;
   z-index: 100;
-  safe-area-inset-top: env(safe-area-inset-top);
 }
 .header-row {
   display: flex;
@@ -79,8 +79,8 @@ body {
 .tab-bar {
   display: flex;
   background: var(--navy-dark);
-  position: fixed; top: 52px; left: 0; right: 0;
-  z-index: 100;
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 99;
   border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 .tab-btn {
@@ -103,7 +103,7 @@ body {
 
 /* === Content === */
 .content {
-  padding-top: 94px;
+  padding-top: 100px;
   padding-bottom: 80px;
   min-height: 100vh;
 }
@@ -703,8 +703,20 @@ function init() {
   setupSearch();
   setupSettings();
   setInterval(updateHeaderDate, 60000);
+  // Adjust tab bar position based on actual header height
+  adjustLayout();
+  window.addEventListener('resize', adjustLayout);
   // Initial pull from remote
   setTimeout(() => pullFromRemote(), 500);
+}
+
+function adjustLayout() {
+  const header = document.querySelector('.header');
+  const tabBar = document.querySelector('.tab-bar');
+  const content = document.querySelector('.content');
+  const hh = header.offsetHeight;
+  tabBar.style.top = hh + 'px';
+  content.style.paddingTop = (hh + tabBar.offsetHeight) + 'px';
 }
 
 // --- Header Date ---
