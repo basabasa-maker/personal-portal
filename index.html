@@ -8,11 +8,11 @@
 <meta http-equiv="Expires" content="0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Portal">
+<meta name="apple-mobile-web-app-title" content="システム手帳">
 <meta name="theme-color" content="#1e3a5f">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>Personal Portal</title>
+<title>システム手帳</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -574,26 +574,23 @@ body {
 .journal-day-view {
   display: none;
 }
-.journal-day-view.active {
-  display: block;
-}
 .journal-day-header {
   background: var(--navy);
   color: var(--white);
   padding: 14px 16px;
-  border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
-  position: sticky;
-  top: -16px;
-  z-index: 10;
-  margin-left: -16px;
-  margin-right: -16px;
-  margin-top: -16px;
-  border-radius: 0 0 12px 12px;
-  padding-top: 16px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 98;
+  border-radius: 0;
+}
+.journal-day-view.active {
+  padding-top: 56px;
 }
 .journal-day-back {
   background: none;
@@ -691,11 +688,11 @@ body {
   background: var(--navy);
   color: var(--white);
   padding: 14px 16px;
-  border-radius: 0 0 12px 12px;
-  margin: -16px -16px 16px;
-  position: sticky;
-  top: -1px;
-  z-index: 10;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 98;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -726,62 +723,94 @@ body {
   border-bottom: 2px solid var(--navy);
 }
 .daily-timeline {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0 12px;
-  box-shadow: var(--shadow);
+  position: relative;
   margin-bottom: 20px;
+  padding-left: 40px;
+}
+.daily-timeline::before {
+  content: '';
+  position: absolute;
+  left: 38px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
 }
 .daily-hour {
-  display: flex;
-  align-items: flex-start;
-  border-bottom: 1px solid var(--border);
-  min-height: 40px;
   position: relative;
+  min-height: 44px;
+  cursor: pointer;
 }
-.daily-hour:last-child { border-bottom: none; }
 .daily-hour-label {
+  position: absolute;
+  left: -40px;
   width: 32px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-light);
-  padding-top: 10px;
-  flex-shrink: 0;
   text-align: right;
-  padding-right: 10px;
+  top: 0;
+  line-height: 1;
 }
+.daily-hour::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: 3px;
+  width: 6px;
+  height: 6px;
+  background: var(--border);
+  border-radius: 50%;
+  z-index: 1;
+}
+.daily-hour.has-entries::before {
+  background: var(--navy);
+}
+.daily-hour.now .daily-hour-label { color: var(--navy); font-weight: 700; }
+.daily-hour.now::before { background: var(--accent); width: 8px; height: 8px; left: -3px; top: 2px; }
 .daily-hour-content {
-  flex: 1;
-  padding: 8px 0;
-  min-height: 36px;
-  cursor: pointer;
-  border-left: 1px solid var(--border);
-  padding-left: 10px;
+  padding: 0 0 4px 14px;
+  min-height: 44px;
 }
-.daily-hour-content:active { background: rgba(30,58,95,0.04); }
-.daily-entry {
-  font-size: 13px;
-  line-height: 1.5;
-  margin-bottom: 2px;
+.daily-block {
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 4px;
   display: flex;
+  justify-content: space-between;
   align-items: flex-start;
-  gap: 4px;
 }
-.daily-entry.plan { color: var(--text); }
-.daily-entry.actual { color: var(--accent); }
-.daily-entry-del {
+.daily-block.plan {
+  background: #f0f0f0;
+  color: var(--text);
+  border-left: 3px solid var(--text);
+}
+.daily-block.actual {
+  background: #fce4ec;
+  color: var(--accent);
+  border-left: 3px solid var(--accent);
+}
+.daily-block-time {
+  font-size: 10px;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+.daily-block-text {
+  flex: 1;
+}
+.daily-block-del {
   font-size: 10px;
   color: var(--text-light);
   background: none;
   border: none;
   cursor: pointer;
   padding: 0 2px;
-  opacity: 0.5;
+  opacity: 0.4;
+  flex-shrink: 0;
 }
-.daily-entry-del:active { opacity: 1; }
-.daily-hour.now .daily-hour-label { color: var(--navy); font-weight: 700; }
-.daily-hour.now { background: rgba(30,58,95,0.03); }
+.daily-block-del:active { opacity: 1; }
 
 /* Daily Check Section */
 .daily-check-list {
@@ -817,7 +846,7 @@ body {
 
 /* Daily Entry Input Modal */
 .daily-input-modal .modal {
-  max-height: 50vh;
+  max-height: 60vh;
 }
 .daily-input-type {
   display: flex;
@@ -838,6 +867,24 @@ body {
 }
 .daily-type-btn.active-plan { background: var(--text); color: var(--white); border-color: var(--text); }
 .daily-type-btn.active-actual { background: var(--accent); color: var(--white); border-color: var(--accent); }
+.daily-time-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.daily-time-row select {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  background: var(--white);
+}
+.daily-time-row span {
+  font-size: 14px;
+  color: var(--text-light);
+}
 
 /* === Placeholder Tabs === */
 .placeholder {
@@ -970,7 +1017,7 @@ body {
 <header class="header">
   <div class="header-row">
     <div style="width:36px;"></div>
-    <div class="header-title">Personal Portal</div>
+    <div class="header-title">システム手帳</div>
     <button class="header-btn" id="reloadBtn" onclick="reloadData()" title="データを再読み込み">🔄</button>
   </div>
   <div class="header-date" id="headerDate"></div>
@@ -1090,11 +1137,15 @@ body {
 <!-- Daily Entry Modal -->
 <div class="modal-overlay daily-input-modal" id="dailyInputModal">
   <div class="modal">
-    <h2 id="dailyInputTitle">予定を追加</h2>
-    <input type="hidden" id="dailyInputHour">
+    <h2 id="dailyInputTitle">記録を追加</h2>
     <div class="daily-input-type">
-      <button type="button" class="daily-type-btn active-plan" id="dailyTypePlan" onclick="setDailyType('plan')">予定（黒）</button>
-      <button type="button" class="daily-type-btn" id="dailyTypeActual" onclick="setDailyType('actual')">実績（赤）</button>
+      <button type="button" class="daily-type-btn" id="dailyTypePlan" onclick="setDailyType('plan')">予定（黒）</button>
+      <button type="button" class="daily-type-btn active-actual" id="dailyTypeActual" onclick="setDailyType('actual')">実績（赤）</button>
+    </div>
+    <div class="daily-time-row">
+      <select id="dailyStartHour"></select>
+      <span>〜</span>
+      <select id="dailyEndHour"></select>
     </div>
     <input type="text" id="dailyInputText" placeholder="内容を入力" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;">
     <div class="modal-btns" style="margin-top:12px;">
@@ -1184,6 +1235,8 @@ function init() {
   setupSearch();
   setupSettings();
   setInterval(updateHeaderDate, 60000);
+  // Hide daily header initially (shown when Daily tab is active)
+  document.getElementById('dailyHeader').style.display = 'none';
   // Adjust tab bar position based on actual header height
   adjustLayout();
   window.addEventListener('resize', adjustLayout);
@@ -1212,6 +1265,8 @@ function updateHeaderDate() {
 function setupTabs() {
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+      // If leaving journal day view, restore header
+      if (journalSelectedDate) journalBackToCal();
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       btn.classList.add('active');
@@ -1219,6 +1274,17 @@ function setupTabs() {
       const fab = document.getElementById('taskAddBtn');
       if (btn.dataset.tab === 'task') { fab.classList.add('visible'); }
       else { fab.classList.remove('visible'); }
+      // Daily tab: show daily header, hide main header
+      const dailyHeader = document.getElementById('dailyHeader');
+      if (btn.dataset.tab === 'daily') {
+        document.querySelector('.header').style.display = 'none';
+        document.querySelector('.tab-bar').style.top = '0';
+        dailyHeader.style.display = '';
+      } else {
+        dailyHeader.style.display = 'none';
+        document.querySelector('.header').style.display = '';
+        adjustLayout();
+      }
     });
   });
 }
@@ -1795,7 +1861,7 @@ function changeTaskSort(val) {
 const DAILY_STORAGE_KEY = 'personal-portal-daily';
 let dailyEntries = [];
 let dailyDate = null; // 'YYYY-MM-DD'
-let dailyEntryType = 'plan';
+let dailyEntryType = 'actual';
 
 // Hours: 4,5,6,...,23,0,1,2,3 (4:00 AM to next 3:00 AM = 24 hours)
 const DAILY_HOURS = [4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3];
@@ -1854,23 +1920,27 @@ function renderDailyTimeline() {
   const dayEntries = dailyEntries.filter(e => e.date === dailyDate);
 
   timeline.innerHTML = DAILY_HOURS.map(h => {
+    // Entries that start at this hour
     const hourEntries = dayEntries.filter(e => e.hour === h);
-    const label = String(h).padStart(2, ' ');
     const nowClass = (isToday && h === currentHour) ? ' now' : '';
+    const hasClass = hourEntries.length > 0 ? ' has-entries' : '';
 
-    let contentHtml = '';
+    let blocksHtml = '';
     if (hourEntries.length > 0) {
-      contentHtml = hourEntries.map(e =>
-        `<div class="daily-entry ${e.type}">
-          <span>${escapeHtml(e.text)}</span>
-          <button class="daily-entry-del" onclick="deleteDailyEntry(${e.id})">x</button>
-        </div>`
-      ).join('');
+      blocksHtml = hourEntries.map(e => {
+        const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
+          ? `<div class="daily-block-time">${e.hour}:00 〜 ${e.endHour}:00</div>`
+          : `<div class="daily-block-time">${e.hour}:00</div>`;
+        return `<div class="daily-block ${e.type}">
+          <div class="daily-block-text">${timeLabel}${escapeHtml(e.text)}</div>
+          <button class="daily-block-del" onclick="event.stopPropagation();deleteDailyEntry(${e.id})">x</button>
+        </div>`;
+      }).join('');
     }
 
-    return `<div class="daily-hour${nowClass}">
+    return `<div class="daily-hour${nowClass}${hasClass}" onclick="openDailyInput(${h})">
       <div class="daily-hour-label">${h}</div>
-      <div class="daily-hour-content" onclick="openDailyInput(${h})">${contentHtml}</div>
+      <div class="daily-hour-content">${blocksHtml}</div>
     </div>`;
   }).join('');
 }
@@ -1911,11 +1981,26 @@ function dailyCheckTask(id) {
   }
 }
 
+function populateHourSelects() {
+  const startSel = document.getElementById('dailyStartHour');
+  const endSel = document.getElementById('dailyEndHour');
+  if (startSel.options.length > 0) return;
+  DAILY_HOURS.forEach(h => {
+    startSel.add(new Option(`${h}:00`, h));
+    endSel.add(new Option(`${h}:00`, h));
+  });
+  // Also add 4:00 as end (next day end)
+}
+
 function openDailyInput(hour) {
-  document.getElementById('dailyInputHour').value = hour;
+  populateHourSelects();
   document.getElementById('dailyInputText').value = '';
-  setDailyType('plan');
-  document.getElementById('dailyInputTitle').textContent = `${hour}:00 に追加`;
+  setDailyType('actual');
+  document.getElementById('dailyStartHour').value = hour;
+  // Default end = hour + 1
+  const nextH = DAILY_HOURS[(DAILY_HOURS.indexOf(hour) + 1) % DAILY_HOURS.length];
+  document.getElementById('dailyEndHour').value = nextH;
+  document.getElementById('dailyInputTitle').textContent = '記録を追加';
   document.getElementById('dailyInputModal').classList.add('active');
   setTimeout(() => document.getElementById('dailyInputText').focus(), 100);
 }
@@ -1935,12 +2020,14 @@ function setDailyType(type) {
 function saveDailyEntry() {
   const text = document.getElementById('dailyInputText').value.trim();
   if (!text) { showToast('内容を入力してください'); return; }
-  const hour = Number(document.getElementById('dailyInputHour').value);
+  const startHour = Number(document.getElementById('dailyStartHour').value);
+  const endHour = Number(document.getElementById('dailyEndHour').value);
 
   dailyEntries.push({
     id: Date.now(),
     date: dailyDate,
-    hour: hour,
+    hour: startHour,
+    endHour: endHour,
     type: dailyEntryType,
     text: text,
     created: new Date().toISOString(),
@@ -2078,6 +2165,10 @@ function openJournalDay(dateStr) {
   document.getElementById('journalCalendarView').style.display = 'none';
   document.getElementById('journalDayView').classList.add('active');
   document.getElementById('journalTextarea').value = '';
+  // Hide main header/tab
+  document.querySelector('.header').style.display = 'none';
+  document.querySelector('.tab-bar').style.display = 'none';
+  document.querySelector('.content').style.paddingTop = '0';
 
   renderJournalEntries();
 }
@@ -2086,6 +2177,10 @@ function journalBackToCal() {
   document.getElementById('journalDayView').classList.remove('active');
   document.getElementById('journalCalendarView').style.display = '';
   journalSelectedDate = null;
+  // Restore main header/tab
+  document.querySelector('.header').style.display = '';
+  document.querySelector('.tab-bar').style.display = '';
+  adjustLayout();
   renderJournalCalendar();
 }
 

@@ -1,6 +1,6 @@
 {
-  "name": "Personal Portal",
-  "short_name": "Portal",
+  "name": "システム手帳",
+  "short_name": "システム手帳",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",

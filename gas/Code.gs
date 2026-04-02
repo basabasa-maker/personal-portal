@@ -13,7 +13,7 @@ const SHEET_NAMES = {
 const NOTE_HEADERS = ['id', 'title', 'content', 'read', 'created'];
 const TASK_HEADERS = ['id', 'title', 'priority', 'due', 'progress', 'status', 'note', 'created', 'completedDate', 'shopping'];
 const JOURNAL_HEADERS = ['id', 'date', 'text', 'created'];
-const DAILY_HEADERS = ['id', 'date', 'hour', 'type', 'text', 'created'];
+const DAILY_HEADERS = ['id', 'date', 'hour', 'endHour', 'type', 'text', 'created'];
 
 function getSheet(name) {
   const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
@@ -209,6 +209,7 @@ function getDailyEntries() {
       headers.forEach((h, i) => { obj[h] = row[i]; });
       obj.id = Number(obj.id);
       obj.hour = Number(obj.hour);
+      if (obj.endHour !== '') obj.endHour = Number(obj.endHour);
       return obj;
     });
     return { success: true, daily: daily, count: daily.length };
