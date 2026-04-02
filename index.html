@@ -581,7 +581,15 @@ body {
       <button class="task-filter-btn" data-filter="done" onclick="filterTasks('done')">完了</button>
       <button class="task-filter-btn" data-filter="shopping" onclick="filterTasks('shopping')">買い物</button>
     </div>
-    <div class="task-count" id="taskCount"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+      <div class="task-count" id="taskCount" style="margin-bottom:0;"></div>
+      <select id="taskSortSelect" onchange="changeTaskSort(this.value)" style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--white);color:var(--text);">
+        <option value="priority">優先順位別</option>
+        <option value="created">日付別</option>
+        <option value="due">期限別</option>
+        <option value="status">進行別</option>
+      </select>
+    </div>
     <ul class="task-list" id="taskList"></ul>
   </div>
 
@@ -682,6 +690,7 @@ const SYNC_URL_KEY = 'personal-portal-sync-url';
 let notes = [];
 let tasks = [];
 let taskFilter = 'active';
+let taskSort = 'priority';
 
 // --- Init ---
 function init() {
@@ -1051,15 +1060,34 @@ function renderTasks() {
     filtered = tasks.filter(t => t.shopping && t.status !== '完了');
   }
 
-  filtered.sort((a, b) => {
-    const pa = priorityOrder[a.priority] || 1;
-    const pb = priorityOrder[b.priority] || 1;
-    if (pa !== pb) return pa - pb;
-    if (a.due && b.due) return a.due.localeCompare(b.due);
-    if (a.due) return -1;
-    if (b.due) return 1;
-    return 0;
-  });
+  const statusOrder = {'未着手': 0, '進行中': 1, '完了': 2};
+  if (taskSort === 'priority') {
+    filtered.sort((a, b) => {
+      const pa = priorityOrder[a.priority] || 1;
+      const pb = priorityOrder[b.priority] || 1;
+      if (pa !== pb) return pa - pb;
+      if (a.due && b.due) return a.due.localeCompare(b.due);
+      if (a.due) return -1;
+      if (b.due) return 1;
+      return 0;
+    });
+  } else if (taskSort === 'created') {
+    filtered.sort((a, b) => (b.created || '').localeCompare(a.created || ''));
+  } else if (taskSort === 'due') {
+    filtered.sort((a, b) => {
+      if (a.due && b.due) return a.due.localeCompare(b.due);
+      if (a.due) return -1;
+      if (b.due) return 1;
+      return 0;
+    });
+  } else if (taskSort === 'status') {
+    filtered.sort((a, b) => {
+      const sa = statusOrder[a.status] ?? 1;
+      const sb = statusOrder[b.status] ?? 1;
+      if (sa !== sb) return sa - sb;
+      return (priorityOrder[a.priority] || 1) - (priorityOrder[b.priority] || 1);
+    });
+  }
 
   const activeCount = tasks.filter(t => t.status !== '完了').length;
   countEl.textContent = taskFilter === 'all' ? `${tasks.length}件（未完了: ${activeCount}件）` :
@@ -1231,6 +1259,11 @@ function syncTasksToRemote() {
     form.submit();
     document.body.removeChild(form);
   } catch(e) { console.error('Task sync error:', e); }
+}
+
+function changeTaskSort(val) {
+  taskSort = val;
+  renderTasks();
 }
 
 // --- Reload ---
