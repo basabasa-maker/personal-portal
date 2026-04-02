@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- White background -->
+  <rect width="512" height="512" rx="96" fill="#ffffff"/>
+
+  <!-- Moleskine notebook body -->
+  <rect x="96" y="56" width="320" height="400" rx="12" fill="#1e3a5f"/>
+
+  <!-- Notebook spine/band -->
+  <rect x="96" y="56" width="28" height="400" rx="6" fill="#152c4a"/>
+
+  <!-- Elastic band (horizontal) -->
+  <rect x="96" y="340" width="320" height="4" fill="#2a4d7a" rx="2"/>
+
+  <!-- Label area (cream colored rectangle) -->
+  <rect x="156" y="120" width="220" height="80" rx="4" fill="#f5f0e8"/>
+
+  <!-- Inner lines on label -->
+  <line x1="168" y1="148" x2="364" y2="148" stroke="#d0c8b8" stroke-width="1"/>
+  <line x1="168" y1="168" x2="364" y2="168" stroke="#d0c8b8" stroke-width="1"/>
+  <line x1="168" y1="188" x2="300" y2="188" stroke="#d0c8b8" stroke-width="1"/>
+
+  <!-- Checkmark in top-right -->
+  <circle cx="380" cy="96" r="28" fill="#ffffff" opacity="0.9"/>
+  <polyline points="364,96 376,108 396,84" fill="none" stroke="#1e3a5f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

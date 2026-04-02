@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Portal">
+<meta name="theme-color" content="#1e3a5f">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Personal Portal</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+:root {
+  --navy: #1e3a5f;
+  --navy-light: #2a4d7a;
+  --navy-dark: #152c4a;
+  --white: #ffffff;
+  --bg: #f5f5f0;
+  --text: #2c2c2c;
+  --text-light: #6b6b6b;
+  --border: #e0ddd5;
+  --accent: #c0392b;
+  --green: #27ae60;
+  --orange: #e67e22;
+  --red-text: #c0392b;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Hiragino Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* === Header === */
+.header {
+  background: var(--navy);
+  color: var(--white);
+  padding: 12px 16px 8px;
+  position: fixed; top: 0; left: 0; right: 0;
+  z-index: 100;
+  safe-area-inset-top: env(safe-area-inset-top);
+}
+.header-title {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+.header-date {
+  font-size: 11px;
+  text-align: center;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+/* === Tab Bar === */
+.tab-bar {
+  display: flex;
+  background: var(--navy-dark);
+  position: fixed; top: 52px; left: 0; right: 0;
+  z-index: 100;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.tab-btn {
+  flex: 1;
+  padding: 10px 4px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab-btn.active {
+  color: var(--white);
+  border-bottom-color: var(--white);
+}
+
+/* === Content === */
+.content {
+  padding-top: 94px;
+  padding-bottom: 80px;
+  min-height: 100vh;
+}
+.tab-content {
+  display: none;
+  padding: 16px;
+}
+.tab-content.active { display: block; }
+
+/* === Note Tab === */
+.note-search {
+  position: relative;
+  margin-bottom: 16px;
+}
+.note-search input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 15px;
+  background: var(--white);
+  outline: none;
+}
+.note-search input:focus { border-color: var(--navy); }
+.note-search-icon {
+  position: absolute;
+  left: 12px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+.note-list { list-style: none; }
+.note-item {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+  position: relative;
+}
+.note-item.read { opacity: 0.6; }
+.note-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+.note-item-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--navy);
+  flex: 1;
+  line-height: 1.4;
+}
+.note-item-date {
+  font-size: 11px;
+  color: var(--text-light);
+  white-space: nowrap;
+  margin-left: 8px;
+}
+.note-item-body {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  overflow: hidden;
+  max-height: 100px;
+  position: relative;
+}
+.note-item-body.expanded { max-height: none; }
+.note-item-body h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--navy);
+  margin: 10px 0 4px;
+}
+.note-item-body h3:first-child { margin-top: 0; }
+.note-item-body ul, .note-item-body ol {
+  padding-left: 20px;
+  margin: 4px 0;
+}
+.note-item-body li { margin-bottom: 2px; }
+.note-item-body p { margin-bottom: 6px; }
+.note-item-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 13px;
+}
+.note-item-body table th, .note-item-body table td {
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  text-align: left;
+}
+.note-item-body table th {
+  background: var(--bg);
+  font-weight: 600;
+}
+
+.note-item-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.note-read-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-light);
+  cursor: pointer;
+}
+.note-read-check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--navy);
+}
+.note-expand-btn {
+  font-size: 12px;
+  color: var(--navy);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.note-delete-btn {
+  font-size: 12px;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.note-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-light);
+}
+.note-empty-icon { font-size: 48px; margin-bottom: 12px; }
+.note-empty-text { font-size: 14px; line-height: 1.6; }
+
+.note-count {
+  font-size: 12px;
+  color: var(--text-light);
+  text-align: right;
+  margin-bottom: 8px;
+}
+
+/* === Placeholder Tabs === */
+.placeholder {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-light);
+}
+.placeholder-icon { font-size: 48px; margin-bottom: 16px; }
+.placeholder-title { font-size: 18px; font-weight: 600; color: var(--navy); margin-bottom: 8px; }
+.placeholder-text { font-size: 14px; line-height: 1.6; }
+
+/* === Settings FAB === */
+.settings-fab {
+  position: fixed;
+  bottom: 20px; right: 20px;
+  width: 48px; height: 48px;
+  background: var(--navy);
+  color: var(--white);
+  border: none;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* === Settings Modal === */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--white);
+  border-radius: 14px;
+  padding: 24px 20px;
+  width: calc(100% - 40px);
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.modal h2 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--navy);
+  margin-bottom: 16px;
+}
+.modal label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  display: block;
+  margin-bottom: 4px;
+}
+.modal input[type="text"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+.modal-btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.modal-btns button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+}
+.btn-primary { background: var(--navy); color: var(--white); }
+.btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border) !important; }
+.btn-test {
+  width: 100%;
+  padding: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+.sync-status {
+  font-size: 12px;
+  text-align: center;
+  margin-top: 8px;
+  padding: 6px;
+  border-radius: 6px;
+}
+.sync-ok { background: #e8f5e9; color: #2e7d32; }
+.sync-err { background: #ffebee; color: #c62828; }
+
+/* === Toast === */
+.toast {
+  position: fixed;
+  bottom: 80px; left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--navy);
+  color: var(--white);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 300;
+  opacity: 0;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-title">Personal Portal</div>
+  <div class="header-date" id="headerDate"></div>
+</header>
+
+<nav class="tab-bar">
+  <button class="tab-btn" data-tab="daily">Daily</button>
+  <button class="tab-btn" data-tab="journal">Journal</button>
+  <button class="tab-btn" data-tab="task">Task</button>
+  <button class="tab-btn active" data-tab="note">Note</button>
+</nav>
+
+<!-- Daily Tab -->
+<div class="content">
+  <div class="tab-content" id="tab-daily">
+    <div class="placeholder">
+      <div class="placeholder-icon">📅</div>
+      <div class="placeholder-title">Daily</div>
+      <div class="placeholder-text">デイリーノート機能は<br>Phase 4 で実装予定です</div>
+    </div>
+  </div>
+
+  <!-- Journal Tab -->
+  <div class="tab-content" id="tab-journal">
+    <div class="placeholder">
+      <div class="placeholder-icon">📓</div>
+      <div class="placeholder-title">Journal</div>
+      <div class="placeholder-text">ジャーナル機能は<br>Phase 3 で実装予定です</div>
+    </div>
+  </div>
+
+  <!-- Task Tab -->
+  <div class="tab-content" id="tab-task">
+    <div class="placeholder">
+      <div class="placeholder-icon">✅</div>
+      <div class="placeholder-title">Task</div>
+      <div class="placeholder-text">タスク機能は<br>Phase 2 で実装予定です</div>
+    </div>
+  </div>
+
+  <!-- Note Tab -->
+  <div class="tab-content active" id="tab-note">
+    <div class="note-search">
+      <span class="note-search-icon">🔍</span>
+      <input type="text" id="noteSearchInput" placeholder="ノートを検索...">
+    </div>
+    <div class="note-count" id="noteCount"></div>
+    <ul class="note-list" id="noteList"></ul>
+    <div class="note-empty" id="noteEmpty" style="display:none;">
+      <div class="note-empty-icon">📝</div>
+      <div class="note-empty-text">ノートはまだありません<br>セッションで「ノートに追加して」と<br>伝えてください</div>
+    </div>
+  </div>
+</div>
+
+<button class="settings-fab" id="settingsBtn">⚙</button>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h2>設定</h2>
+    <label>Google Apps Script URL</label>
+    <input type="text" id="gasUrl" placeholder="https://script.google.com/...">
+    <button class="btn-test" id="testConnectionBtn">接続テスト</button>
+    <div class="sync-status" id="syncStatus" style="display:none;"></div>
+    <div class="modal-btns">
+      <button class="btn-secondary" id="settingsCancelBtn">キャンセル</button>
+      <button class="btn-primary" id="settingsSaveBtn">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// Personal Portal - Note MVP
+// ============================================================
+
+const STORAGE_KEY = 'personal-portal-notes';
+const SYNC_URL_KEY = 'personal-portal-sync-url';
+let notes = [];
+
+// --- Init ---
+function init() {
+  updateHeaderDate();
+  loadNotes();
+  renderNotes();
+  setupTabs();
+  setupSearch();
+  setupSettings();
+  setInterval(updateHeaderDate, 60000);
+}
+
+// --- Header Date ---
+function updateHeaderDate() {
+  const now = new Date();
+  const days = ['日','月','火','水','木','金','土'];
+  document.getElementById('headerDate').textContent =
+    `${now.getFullYear()}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getDate().toString().padStart(2,'0')} (${days[now.getDay()]})`;
+}
+
+// --- Tabs ---
+function setupTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+}
+
+// --- Notes CRUD ---
+function loadNotes() {
+  try {
+    notes = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch(e) { notes = []; }
+}
+
+function saveNotes() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  syncToRemote();
+}
+
+function addNote(title, content) {
+  const note = {
+    id: Date.now(),
+    title: title,
+    content: content,
+    read: false,
+    created: new Date().toISOString(),
+  };
+  notes.unshift(note);
+  saveNotes();
+  renderNotes();
+  showToast('ノートを追加しました');
+  return note;
+}
+
+function toggleRead(id) {
+  const note = notes.find(n => n.id === id);
+  if (note) {
+    note.read = !note.read;
+    saveNotes();
+    renderNotes();
+  }
+}
+
+function deleteNote(id) {
+  if (confirm('このノートを削除しますか？')) {
+    notes = notes.filter(n => n.id !== id);
+    saveNotes();
+    renderNotes();
+    showToast('削除しました');
+  }
+}
+
+// --- Render ---
+function renderNotes(filter) {
+  const list = document.getElementById('noteList');
+  const empty = document.getElementById('noteEmpty');
+  const count = document.getElementById('noteCount');
+  const q = filter || document.getElementById('noteSearchInput').value.toLowerCase();
+
+  let filtered = notes;
+  if (q) {
+    filtered = notes.filter(n =>
+      n.title.toLowerCase().includes(q) ||
+      n.content.toLowerCase().includes(q)
+    );
+  }
+
+  if (filtered.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    count.textContent = q ? `"${q}" の検索結果: 0件` : '';
+    return;
+  }
+
+  empty.style.display = 'none';
+  count.textContent = q ? `"${q}" の検索結果: ${filtered.length}件` : `${filtered.length}件のノート`;
+
+  list.innerHTML = filtered.map(note => {
+    const date = new Date(note.created);
+    const dateStr = `${(date.getMonth()+1)}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2,'0')}`;
+    const readClass = note.read ? ' read' : '';
+    const contentHtml = formatContent(note.content);
+
+    return `
+      <li class="note-item${readClass}" data-id="${note.id}">
+        <div class="note-item-header">
+          <div class="note-item-title">${escapeHtml(note.title)}</div>
+          <div class="note-item-date">${dateStr}</div>
+        </div>
+        <div class="note-item-body" id="body-${note.id}">${contentHtml}</div>
+        <div class="note-item-footer">
+          <label class="note-read-check">
+            <input type="checkbox" ${note.read ? 'checked' : ''} onchange="toggleRead(${note.id})">
+            既読
+          </label>
+          <div>
+            <button class="note-expand-btn" onclick="toggleExpand(${note.id})">もっと見る</button>
+            <button class="note-delete-btn" onclick="deleteNote(${note.id})">削除</button>
+          </div>
+        </div>
+      </li>`;
+  }).join('');
+}
+
+function toggleExpand(id) {
+  const body = document.getElementById('body-' + id);
+  if (body) {
+    body.classList.toggle('expanded');
+    const btn = body.parentElement.querySelector('.note-expand-btn');
+    if (btn) btn.textContent = body.classList.contains('expanded') ? '閉じる' : 'もっと見る';
+  }
+}
+
+// --- Content Formatting ---
+function formatContent(text) {
+  if (!text) return '';
+  // Already HTML (from API)
+  if (text.includes('<h3>') || text.includes('<p>') || text.includes('<ul>')) {
+    return text;
+  }
+  // Markdown-like formatting
+  let html = escapeHtml(text);
+  // Headers (### or ##)
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+  // Bold
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Lists
+  html = html.replace(/^[・\-\*] (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+  // Line breaks → paragraphs
+  html = html.split(/\n\n+/).map(p => {
+    if (p.startsWith('<h3>') || p.startsWith('<ul>')) return p;
+    return '<p>' + p.replace(/\n/g, '<br>') + '</p>';
+  }).join('');
+  return html;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// --- Search ---
+function setupSearch() {
+  const input = document.getElementById('noteSearchInput');
+  let timeout;
+  input.addEventListener('input', () => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => renderNotes(), 200);
+  });
+}
+
+// --- Settings ---
+function setupSettings() {
+  const btn = document.getElementById('settingsBtn');
+  const modal = document.getElementById('settingsModal');
+  const cancel = document.getElementById('settingsCancelBtn');
+  const save = document.getElementById('settingsSaveBtn');
+  const test = document.getElementById('testConnectionBtn');
+  const urlInput = document.getElementById('gasUrl');
+
+  btn.addEventListener('click', () => {
+    urlInput.value = localStorage.getItem(SYNC_URL_KEY) || '';
+    modal.classList.add('active');
+  });
+  cancel.addEventListener('click', () => modal.classList.remove('active'));
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.classList.remove('active');
+  });
+  save.addEventListener('click', () => {
+    localStorage.setItem(SYNC_URL_KEY, urlInput.value.trim());
+    modal.classList.remove('active');
+    showToast('設定を保存しました');
+  });
+  test.addEventListener('click', () => testConnection());
+}
+
+// --- Sync ---
+function getSyncUrl() {
+  return localStorage.getItem(SYNC_URL_KEY) || '';
+}
+
+function syncToRemote() {
+  const url = getSyncUrl();
+  if (!url) return;
+  try {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = url;
+    form.target = 'sync-frame';
+    const ta = document.createElement('textarea');
+    ta.name = 'data';
+    ta.value = JSON.stringify({ type: 'notes', items: notes });
+    form.appendChild(ta);
+    document.body.appendChild(form);
+    let iframe = document.getElementById('sync-frame');
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'sync-frame';
+      iframe.name = 'sync-frame';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+    }
+    form.submit();
+    document.body.removeChild(form);
+  } catch(e) { console.error('Sync error:', e); }
+}
+
+function pullFromRemote() {
+  const url = getSyncUrl();
+  if (!url) return;
+  const callbackName = 'portalCallback_' + Date.now();
+  window[callbackName] = function(data) {
+    if (data && data.success && data.notes) {
+      mergeNotes(data.notes);
+      renderNotes();
+    }
+    delete window[callbackName];
+    const s = document.getElementById('pull-script');
+    if (s) s.remove();
+  };
+  const script = document.createElement('script');
+  script.id = 'pull-script';
+  script.src = url + '?callback=' + callbackName + '&type=notes';
+  document.body.appendChild(script);
+  setTimeout(() => {
+    delete window[callbackName];
+    const s = document.getElementById('pull-script');
+    if (s) s.remove();
+  }, 30000);
+}
+
+function mergeNotes(remote) {
+  const localIds = new Set(notes.map(n => n.id));
+  let added = 0;
+  remote.forEach(r => {
+    if (!localIds.has(r.id)) {
+      notes.push(r);
+      added++;
+    }
+  });
+  if (added > 0) {
+    notes.sort((a, b) => new Date(b.created) - new Date(a.created));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  }
+}
+
+function testConnection() {
+  const status = document.getElementById('syncStatus');
+  const url = document.getElementById('gasUrl').value.trim();
+  if (!url) {
+    status.textContent = 'URLを入力してください';
+    status.className = 'sync-status sync-err';
+    status.style.display = 'block';
+    return;
+  }
+  status.textContent = '接続中...';
+  status.className = 'sync-status';
+  status.style.display = 'block';
+  const callbackName = 'testCallback_' + Date.now();
+  window[callbackName] = function(data) {
+    if (data && data.success) {
+      status.textContent = '接続成功';
+      status.className = 'sync-status sync-ok';
+    } else {
+      status.textContent = '接続エラー';
+      status.className = 'sync-status sync-err';
+    }
+    delete window[callbackName];
+  };
+  const script = document.createElement('script');
+  script.src = url + '?callback=' + callbackName + '&type=test';
+  script.onerror = () => {
+    status.textContent = '接続エラー: URLを確認してください';
+    status.className = 'sync-status sync-err';
+    delete window[callbackName];
+  };
+  document.body.appendChild(script);
+  setTimeout(() => {
+    delete window[callbackName];
+    script.remove();
+  }, 15000);
+}
+
+// --- Toast ---
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// --- Pull on visibility ---
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) pullFromRemote();
+});
+
+// --- External API (for Claude Code to call) ---
+window.PortalAPI = {
+  addNote: addNote,
+  getNotes: () => notes,
+  deleteNote: deleteNote,
+};
+
+// --- Start ---
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
