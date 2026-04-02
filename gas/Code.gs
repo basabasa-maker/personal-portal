@@ -11,8 +11,8 @@ const SHEET_NAMES = {
   daily: 'Daily'
 };
 const NOTE_HEADERS = ['id', 'title', 'content', 'read', 'created'];
-const TASK_HEADERS = ['id', 'title', 'priority', 'due', 'status', 'note', 'created', 'completedDate'];
-const JOURNAL_HEADERS = ['id', 'date', 'content', 'created'];
+const TASK_HEADERS = ['id', 'title', 'priority', 'due', 'progress', 'status', 'note', 'created', 'completedDate', 'shopping'];
+const JOURNAL_HEADERS = ['id', 'date', 'text', 'created'];
 const DAILY_HEADERS = ['date', 'time', 'type', 'content', 'checked'];
 
 function getSheet(name) {
@@ -47,11 +47,14 @@ function doGet(e) {
     result = getNotes();
   } else if (type === 'tasks') {
     result = getTasks();
+  } else if (type === 'journal') {
+    result = getJournal();
   } else if (type === 'all') {
     result = {
       success: true,
       notes: getNotes().notes || [],
       tasks: getTasks().tasks || [],
+      journal: getJournal().journal || [],
     };
   } else {
     result = { success: false, message: 'Unknown type: ' + type };
@@ -106,6 +109,24 @@ function getTasks() {
   }
 }
 
+function getJournal() {
+  try {
+    const sheet = getSheet(SHEET_NAMES.journal);
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return { success: true, journal: [], count: 0 };
+    const headers = data[0];
+    const journal = data.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i]; });
+      obj.id = Number(obj.id);
+      return obj;
+    });
+    return { success: true, journal: journal, count: journal.length };
+  } catch(e) {
+    return { success: false, message: e.message };
+  }
+}
+
 // --- POST ---
 function doPost(e) {
   try {
@@ -117,6 +138,8 @@ function doPost(e) {
       return saveNotes(payload.items || []);
     } else if (type === 'tasks') {
       return saveTasks(payload.items || []);
+    } else if (type === 'journal') {
+      return saveJournalItems(payload.items || []);
     }
     return makeResponse({ success: false, message: 'Unknown type' });
   } catch(e) {
@@ -152,6 +175,22 @@ function saveTasks(items) {
     sheet.getRange(2, 1, rows.length, TASK_HEADERS.length).setValues(rows);
   }
   return makeResponse({ success: true, type: 'tasks', count: items.length });
+}
+
+function saveJournalItems(items) {
+  const sheet = getSheet(SHEET_NAMES.journal);
+  if (sheet.getLastRow() > 1) {
+    sheet.getRange(2, 1, sheet.getLastRow() - 1, JOURNAL_HEADERS.length).clearContent();
+  }
+  if (items.length > 0) {
+    const rows = items.map(item => JOURNAL_HEADERS.map(h => {
+      let val = item[h] || '';
+      if (h === 'text') val = (item[h] || '').substring(0, 50000);
+      return val;
+    }));
+    sheet.getRange(2, 1, rows.length, JOURNAL_HEADERS.length).setValues(rows);
+  }
+  return makeResponse({ success: true, type: 'journal', count: items.length });
 }
 
 function makeResponse(obj) {

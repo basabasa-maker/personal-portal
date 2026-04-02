@@ -347,6 +347,86 @@ body {
   border: 1px solid var(--border);
 }
 .task-status-badge.in-progress { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
+
+/* === Progress Bar === */
+.task-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.task-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+.task-progress-bar::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent, transparent calc(25% - 0.5px),
+    rgba(255,255,255,0.5) calc(25% - 0.5px), rgba(255,255,255,0.5) calc(25% + 0.5px),
+    transparent calc(25% + 0.5px)
+  );
+  z-index: 1;
+}
+.task-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+.task-progress-fill.p0   { width: 0%; background: #bdbdbd; }
+.task-progress-fill.p25  { width: 25%; background: var(--orange); }
+.task-progress-fill.p50  { width: 50%; background: #f9a825; }
+.task-progress-fill.p75  { width: 75%; background: #66bb6a; }
+.task-progress-fill.p100 { width: 100%; background: var(--green); }
+.task-progress-label {
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 32px;
+  text-align: right;
+  color: var(--text-light);
+}
+.task-progress-label.p0   { color: #9e9e9e; }
+.task-progress-label.p25  { color: var(--orange); }
+.task-progress-label.p50  { color: #f9a825; }
+.task-progress-label.p75  { color: #66bb6a; }
+.task-progress-label.p100 { color: var(--green); }
+
+/* === Progress Selector (Form) === */
+.progress-selector {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+.progress-selector-btn {
+  flex: 1;
+  padding: 8px 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--white);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  color: var(--text-light);
+}
+.progress-selector-btn.active {
+  color: var(--white);
+  border-color: transparent;
+}
+.progress-selector-btn[data-val="0"].active   { background: #9e9e9e; }
+.progress-selector-btn[data-val="25"].active  { background: var(--orange); }
+.progress-selector-btn[data-val="50"].active  { background: #f9a825; }
+.progress-selector-btn[data-val="75"].active  { background: #66bb6a; }
+.progress-selector-btn[data-val="100"].active { background: var(--green); }
 .task-note {
   font-size: 12px;
   color: var(--text-light);
@@ -411,6 +491,199 @@ body {
   color: var(--text-light);
   text-align: right;
   margin-bottom: 4px;
+}
+
+/* === Journal Tab === */
+.journal-calendar {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.journal-cal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.journal-cal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--navy);
+}
+.journal-cal-nav {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 10px;
+  color: var(--navy);
+}
+.journal-cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-light);
+  margin-bottom: 4px;
+}
+.journal-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.journal-cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  position: relative;
+  border: none;
+  background: none;
+  color: var(--text);
+}
+.journal-cal-day:active { background: rgba(30,58,95,0.08); }
+.journal-cal-day.empty { cursor: default; }
+.journal-cal-day.today {
+  font-weight: 700;
+  color: var(--navy);
+  background: rgba(30,58,95,0.06);
+}
+.journal-cal-day.has-entry::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background: var(--navy);
+  border-radius: 50%;
+  position: absolute;
+  bottom: 4px;
+}
+.journal-cal-day.other-month { color: #ccc; }
+.journal-cal-day.sunday { color: var(--accent); }
+.journal-cal-day.saturday { color: #1565c0; }
+.journal-cal-day.today.sunday { color: var(--accent); }
+.journal-cal-day.today.saturday { color: #1565c0; }
+
+/* Journal Day View */
+.journal-day-view {
+  display: none;
+}
+.journal-day-view.active {
+  display: block;
+}
+.journal-day-header {
+  background: var(--navy);
+  color: var(--white);
+  padding: 14px 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  position: sticky;
+  top: -16px;
+  z-index: 10;
+  margin-left: -16px;
+  margin-right: -16px;
+  margin-top: -16px;
+  border-radius: 0 0 12px 12px;
+  padding-top: 16px;
+}
+.journal-day-back {
+  background: none;
+  border: none;
+  color: var(--white);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.journal-day-date {
+  font-size: 17px;
+  font-weight: 600;
+}
+.journal-day-weekday {
+  font-size: 13px;
+  opacity: 0.8;
+}
+.journal-entries {
+  list-style: none;
+}
+.journal-entry {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+}
+.journal-entry-time {
+  font-size: 11px;
+  color: var(--text-light);
+  margin-bottom: 6px;
+}
+.journal-entry-text {
+  font-size: 14px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.journal-entry-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+.journal-entry-del {
+  font-size: 12px;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+.journal-input-area {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+  margin-top: 12px;
+}
+.journal-textarea {
+  width: 100%;
+  min-height: 100px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+}
+.journal-textarea:focus { border-color: var(--navy); }
+.journal-save-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--navy);
+  color: var(--white);
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.journal-empty {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-light);
+  font-size: 13px;
 }
 
 /* === Placeholder Tabs === */
@@ -569,10 +842,34 @@ body {
 
   <!-- Journal Tab -->
   <div class="tab-content" id="tab-journal">
-    <div class="placeholder">
-      <div class="placeholder-icon">📓</div>
-      <div class="placeholder-title">Journal</div>
-      <div class="placeholder-text">ジャーナル機能は<br>Phase 3 で実装予定です</div>
+    <!-- Calendar View -->
+    <div id="journalCalendarView">
+      <div class="journal-calendar">
+        <div class="journal-cal-header">
+          <button class="journal-cal-nav" onclick="journalNavMonth(-1)">&lt;</button>
+          <div class="journal-cal-title" id="journalCalTitle"></div>
+          <button class="journal-cal-nav" onclick="journalNavMonth(1)">&gt;</button>
+        </div>
+        <div class="journal-cal-weekdays">
+          <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+        </div>
+        <div class="journal-cal-grid" id="journalCalGrid"></div>
+      </div>
+    </div>
+    <!-- Day View -->
+    <div class="journal-day-view" id="journalDayView">
+      <div class="journal-day-header" id="journalDayHeader">
+        <button class="journal-day-back" onclick="journalBackToCal()">&lt;</button>
+        <div>
+          <div class="journal-day-date" id="journalDayDate"></div>
+          <div class="journal-day-weekday" id="journalDayWeekday"></div>
+        </div>
+      </div>
+      <ul class="journal-entries" id="journalEntries"></ul>
+      <div class="journal-input-area">
+        <textarea class="journal-textarea" id="journalTextarea" placeholder="ここにジャーナルを入力..."></textarea>
+        <button class="journal-save-btn" onclick="saveJournalEntry()">保存</button>
+      </div>
     </div>
   </div>
 
@@ -647,12 +944,15 @@ body {
     </select>
     <label>期限</label>
     <input type="date" id="taskDueInput">
-    <label>ステータス</label>
-    <select id="taskStatusInput">
-      <option value="未着手">未着手</option>
-      <option value="進行中">進行中</option>
-      <option value="完了">完了</option>
-    </select>
+    <label>進捗</label>
+    <div class="progress-selector" id="progressSelector">
+      <button type="button" class="progress-selector-btn active" data-val="0" onclick="selectProgress(0)">0%</button>
+      <button type="button" class="progress-selector-btn" data-val="25" onclick="selectProgress(25)">25%</button>
+      <button type="button" class="progress-selector-btn" data-val="50" onclick="selectProgress(50)">50%</button>
+      <button type="button" class="progress-selector-btn" data-val="75" onclick="selectProgress(75)">75%</button>
+      <button type="button" class="progress-selector-btn" data-val="100" onclick="selectProgress(100)">100%</button>
+    </div>
+    <input type="hidden" id="taskProgressInput" value="0">
     <label>メモ</label>
     <textarea id="taskNoteInput" placeholder="メモ（任意）"></textarea>
     <label style="margin-top:12px;">
@@ -700,6 +1000,7 @@ function init() {
   updateHeaderDate();
   loadNotes();
   loadTasks();
+  initJournal();
   renderNotes();
   renderTasks();
   setupTabs();
@@ -956,6 +1257,7 @@ function pullFromRemote() {
     if (data && data.success) {
       if (data.notes) { mergeNotes(data.notes); renderNotes(); }
       if (data.tasks) { mergeTasks(data.tasks); renderTasks(); }
+      if (data.journal) { mergeJournal(data.journal); renderJournalCalendar(); }
     }
     delete window[callbackName];
     const s = document.getElementById('pull-script');
@@ -1068,14 +1370,13 @@ function renderTasks() {
 
   let filtered = tasks;
   if (taskFilter === 'active') {
-    filtered = tasks.filter(t => t.status !== '完了');
+    filtered = tasks.filter(t => (t.progress ?? statusToProgress(t.status)) < 100);
   } else if (taskFilter === 'done') {
-    filtered = tasks.filter(t => t.status === '完了');
+    filtered = tasks.filter(t => (t.progress ?? statusToProgress(t.status)) === 100);
   } else if (taskFilter === 'shopping') {
-    filtered = tasks.filter(t => t.shopping && t.status !== '完了');
+    filtered = tasks.filter(t => t.shopping && (t.progress ?? statusToProgress(t.status)) < 100);
   }
 
-  const statusOrder = {'未着手': 0, '進行中': 1, '完了': 2};
   if (taskSort === 'priority') {
     filtered.sort((a, b) => {
       const pa = priorityOrder[a.priority] ?? 1;
@@ -1097,14 +1398,14 @@ function renderTasks() {
     });
   } else if (taskSort === 'status') {
     filtered.sort((a, b) => {
-      const sa = statusOrder[a.status] ?? 1;
-      const sb = statusOrder[b.status] ?? 1;
-      if (sa !== sb) return sa - sb;
+      const pa = a.progress ?? statusToProgress(a.status);
+      const pb = b.progress ?? statusToProgress(b.status);
+      if (pa !== pb) return pa - pb;
       return (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1);
     });
   }
 
-  const activeCount = tasks.filter(t => t.status !== '完了').length;
+  const activeCount = tasks.filter(t => (t.progress ?? statusToProgress(t.status)) < 100).length;
   countEl.textContent = taskFilter === 'all' ? `${tasks.length}件（未完了: ${activeCount}件）` :
     taskFilter === 'shopping' ? `買い物: ${filtered.length}件` :
     `${filtered.length}件`;
@@ -1116,11 +1417,11 @@ function renderTasks() {
   }
 
   list.innerHTML = filtered.map(task => {
-    const isDone = task.status === '完了';
+    const progress = task.progress ?? statusToProgress(task.status);
+    const isDone = progress === 100;
     const doneClass = isDone ? ' done' : '';
     const checked = isDone ? 'checked' : '';
     const pClass = task.priority === '高' ? 'high' : task.priority === '低' ? 'low' : 'mid';
-    const statusClass = task.status === '進行中' ? ' in-progress' : '';
 
     let dueHtml = '';
     if (task.due) {
@@ -1139,8 +1440,11 @@ function renderTasks() {
           <div class="task-title">${shopIcon}${escapeHtml(task.title)}</div>
           <div class="task-meta">
             <span class="task-badge ${pClass}">${task.priority}</span>
-            ${!isDone ? `<span class="task-status-badge${statusClass}">${task.status}</span>` : ''}
             ${dueHtml}
+          </div>
+          <div class="task-progress-wrap">
+            <div class="task-progress-bar"><div class="task-progress-fill p${progress}"></div></div>
+            <span class="task-progress-label p${progress}">${progress}%</span>
           </div>
           ${noteHtml}
         </div>
@@ -1164,13 +1468,35 @@ function formatDue(dateStr) {
   return label;
 }
 
+function statusToProgress(status) {
+  if (status === '完了') return 100;
+  if (status === '進行中') return 50;
+  return 0;
+}
+
+function progressToStatus(progress) {
+  if (progress === 100) return '完了';
+  if (progress > 0) return '進行中';
+  return '未着手';
+}
+
+function selectProgress(val) {
+  document.getElementById('taskProgressInput').value = val;
+  document.querySelectorAll('.progress-selector-btn').forEach(b => {
+    b.classList.toggle('active', Number(b.dataset.val) === val);
+  });
+}
+
 function toggleTaskDone(id) {
   const task = tasks.find(t => t.id === id);
   if (task) {
-    if (task.status === '完了') {
+    const current = task.progress ?? statusToProgress(task.status);
+    if (current === 100) {
+      task.progress = 0;
       task.status = '未着手';
       task.completedDate = '';
     } else {
+      task.progress = 100;
       task.status = '完了';
       task.completedDate = new Date().toISOString().slice(0, 10);
     }
@@ -1188,7 +1514,8 @@ function openTaskForm(id) {
       document.getElementById('taskTitleInput').value = t.title;
       document.getElementById('taskPriorityInput').value = t.priority;
       document.getElementById('taskDueInput').value = t.due || '';
-      document.getElementById('taskStatusInput').value = t.status;
+      const prog = t.progress ?? statusToProgress(t.status);
+      selectProgress(prog);
       document.getElementById('taskNoteInput').value = t.note || '';
       document.getElementById('taskShoppingCheck').checked = !!t.shopping;
     }
@@ -1196,7 +1523,7 @@ function openTaskForm(id) {
     document.getElementById('taskTitleInput').value = '';
     document.getElementById('taskPriorityInput').value = '中';
     document.getElementById('taskDueInput').value = '';
-    document.getElementById('taskStatusInput').value = '未着手';
+    selectProgress(0);
     document.getElementById('taskNoteInput').value = '';
     document.getElementById('taskShoppingCheck').checked = false;
   }
@@ -1214,11 +1541,13 @@ function saveTask() {
   const title = document.getElementById('taskTitleInput').value.trim();
   if (!title) { showToast('タスク名を入力してください'); return; }
   const editId = document.getElementById('taskEditId').value;
+  const progress = Number(document.getElementById('taskProgressInput').value);
   const data = {
     title: title,
     priority: document.getElementById('taskPriorityInput').value,
     due: document.getElementById('taskDueInput').value,
-    status: document.getElementById('taskStatusInput').value,
+    progress: progress,
+    status: progressToStatus(progress),
     note: document.getElementById('taskNoteInput').value.trim(),
     shopping: document.getElementById('taskShoppingCheck').checked,
   };
@@ -1281,6 +1610,188 @@ function changeTaskSort(val) {
   renderTasks();
 }
 
+// ============================================================
+// Journal
+// ============================================================
+
+const JOURNAL_STORAGE_KEY = 'personal-portal-journal';
+let journalEntries = [];
+let journalViewYear, journalViewMonth; // 0-indexed month
+let journalSelectedDate = null; // 'YYYY-MM-DD'
+
+function loadJournal() {
+  try {
+    journalEntries = JSON.parse(localStorage.getItem(JOURNAL_STORAGE_KEY) || '[]');
+  } catch(e) { journalEntries = []; }
+}
+
+function saveJournal() {
+  localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(journalEntries));
+  syncJournalToRemote();
+}
+
+function initJournal() {
+  loadJournal();
+  const now = new Date();
+  journalViewYear = now.getFullYear();
+  journalViewMonth = now.getMonth();
+  renderJournalCalendar();
+}
+
+function journalNavMonth(dir) {
+  journalViewMonth += dir;
+  if (journalViewMonth < 0) { journalViewMonth = 11; journalViewYear--; }
+  if (journalViewMonth > 11) { journalViewMonth = 0; journalViewYear++; }
+  renderJournalCalendar();
+}
+
+function renderJournalCalendar() {
+  const title = document.getElementById('journalCalTitle');
+  const grid = document.getElementById('journalCalGrid');
+
+  title.textContent = `${journalViewYear}年${journalViewMonth + 1}月`;
+
+  const firstDay = new Date(journalViewYear, journalViewMonth, 1).getDay();
+  const daysInMonth = new Date(journalViewYear, journalViewMonth + 1, 0).getDate();
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+
+  // Dates that have entries
+  const entryDates = new Set(journalEntries.map(e => e.date));
+
+  let html = '';
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    html += '<button class="journal-cal-day empty"></button>';
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${journalViewYear}-${String(journalViewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const dayOfWeek = new Date(journalViewYear, journalViewMonth, d).getDay();
+    let classes = 'journal-cal-day';
+    if (dateStr === todayStr) classes += ' today';
+    if (entryDates.has(dateStr)) classes += ' has-entry';
+    if (dayOfWeek === 0) classes += ' sunday';
+    if (dayOfWeek === 6) classes += ' saturday';
+    html += `<button class="${classes}" onclick="openJournalDay('${dateStr}')">${d}</button>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+function openJournalDay(dateStr) {
+  journalSelectedDate = dateStr;
+  const d = new Date(dateStr + 'T00:00:00');
+  const days = ['日','月','火','水','木','金','土'];
+  document.getElementById('journalDayDate').textContent =
+    `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+  document.getElementById('journalDayWeekday').textContent = `${days[d.getDay()]}曜日`;
+
+  document.getElementById('journalCalendarView').style.display = 'none';
+  document.getElementById('journalDayView').classList.add('active');
+  document.getElementById('journalTextarea').value = '';
+
+  renderJournalEntries();
+}
+
+function journalBackToCal() {
+  document.getElementById('journalDayView').classList.remove('active');
+  document.getElementById('journalCalendarView').style.display = '';
+  journalSelectedDate = null;
+  renderJournalCalendar();
+}
+
+function renderJournalEntries() {
+  const list = document.getElementById('journalEntries');
+  const dayEntries = journalEntries
+    .filter(e => e.date === journalSelectedDate)
+    .sort((a, b) => (a.created || '').localeCompare(b.created || ''));
+
+  if (dayEntries.length === 0) {
+    list.innerHTML = '<div class="journal-empty">この日の記録はまだありません</div>';
+    return;
+  }
+
+  list.innerHTML = dayEntries.map(entry => {
+    const time = entry.created ? new Date(entry.created).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : '';
+    return `
+      <li class="journal-entry">
+        <div class="journal-entry-time">${time}</div>
+        <div class="journal-entry-text">${escapeHtml(entry.text)}</div>
+        <div class="journal-entry-actions">
+          <button class="journal-entry-del" onclick="deleteJournalEntry(${entry.id})">削除</button>
+        </div>
+      </li>`;
+  }).join('');
+}
+
+function saveJournalEntry() {
+  const textarea = document.getElementById('journalTextarea');
+  const text = textarea.value.trim();
+  if (!text) { showToast('テキストを入力してください'); return; }
+
+  journalEntries.push({
+    id: Date.now(),
+    date: journalSelectedDate,
+    text: text,
+    created: new Date().toISOString(),
+  });
+
+  saveJournal();
+  textarea.value = '';
+  renderJournalEntries();
+  showToast('保存しました');
+}
+
+function deleteJournalEntry(id) {
+  if (confirm('この記録を削除しますか？')) {
+    journalEntries = journalEntries.filter(e => e.id !== id);
+    saveJournal();
+    renderJournalEntries();
+    showToast('削除しました');
+  }
+}
+
+function syncJournalToRemote() {
+  const url = getSyncUrl();
+  if (!url) return;
+  try {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = url;
+    form.target = 'sync-frame';
+    const ta = document.createElement('textarea');
+    ta.name = 'data';
+    ta.value = JSON.stringify({ type: 'journal', items: journalEntries });
+    form.appendChild(ta);
+    document.body.appendChild(form);
+    let iframe = document.getElementById('sync-frame');
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'sync-frame';
+      iframe.name = 'sync-frame';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+    }
+    form.submit();
+    document.body.removeChild(form);
+  } catch(e) { console.error('Journal sync error:', e); }
+}
+
+function mergeJournal(remote) {
+  const localIds = new Set(journalEntries.map(e => e.id));
+  let added = 0;
+  remote.forEach(r => {
+    if (!localIds.has(r.id)) {
+      journalEntries.push(r);
+      added++;
+    }
+  });
+  if (added > 0) {
+    localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(journalEntries));
+  }
+}
+
 // --- Reload ---
 function reloadData() {
   const btn = document.getElementById('reloadBtn');
@@ -1330,8 +1841,13 @@ window.PortalAPI = {
   deleteNote: deleteNote,
   getTasks: () => tasks,
   addTask: function(title, priority, due, note, shopping) {
-    tasks.push({ id: Date.now(), title, priority: priority||'中', due: due||'', status: '未着手', note: note||'', shopping: !!shopping, created: new Date().toISOString().slice(0,10), completedDate: '' });
+    tasks.push({ id: Date.now(), title, priority: priority||'中', due: due||'', progress: 0, status: '未着手', note: note||'', shopping: !!shopping, created: new Date().toISOString().slice(0,10), completedDate: '' });
     saveTasks(); renderTasks();
+  },
+  getJournal: () => journalEntries,
+  addJournal: function(date, text) {
+    journalEntries.push({ id: Date.now(), date: date, text: text, created: new Date().toISOString() });
+    saveJournal(); renderJournalCalendar();
   },
 };
 
