@@ -1544,27 +1544,18 @@ function testConnection() {
   status.className = 'sync-status';
   status.style.display = 'block';
   fetch(url + '?type=test', { redirect: 'follow' })
-    .then(r => {
-      status.textContent = 'HTTP ' + r.status + ' ' + r.type;
-      return r.text();
-    })
-    .then(text => {
-      try {
-        const data = JSON.parse(text);
-        if (data && data.success) {
-          status.textContent = '接続成功';
-          status.className = 'sync-status sync-ok';
-        } else {
-          status.textContent = '応答エラー: ' + text.substring(0, 100);
-          status.className = 'sync-status sync-err';
-        }
-      } catch(e) {
-        status.textContent = '解析エラー: ' + text.substring(0, 100);
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.success) {
+        status.textContent = '接続成功';
+        status.className = 'sync-status sync-ok';
+      } else {
+        status.textContent = '接続エラー';
         status.className = 'sync-status sync-err';
       }
     })
-    .catch(err => {
-      status.textContent = 'fetch失敗: ' + err.message;
+    .catch(() => {
+      status.textContent = '接続エラー: URLを確認してください';
       status.className = 'sync-status sync-err';
     });
 }
