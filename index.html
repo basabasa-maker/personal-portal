@@ -578,6 +578,7 @@ body {
   background: var(--navy);
   color: var(--white);
   padding: 14px 16px;
+  padding-top: calc(14px + env(safe-area-inset-top, 0px));
   display: flex;
   align-items: center;
   gap: 12px;
@@ -586,11 +587,12 @@ body {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 98;
+  z-index: 100;
   border-radius: 0;
 }
 .journal-day-view.active {
-  padding-top: 56px;
+  display: block;
+  padding-top: 60px;
 }
 .journal-day-back {
   background: none;
@@ -688,11 +690,12 @@ body {
   background: var(--navy);
   color: var(--white);
   padding: 14px 16px;
+  padding-top: calc(14px + env(safe-area-inset-top, 0px));
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 98;
+  z-index: 100;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -740,6 +743,7 @@ body {
   position: relative;
   min-height: 44px;
   cursor: pointer;
+  border-top: 1px solid #eee;
 }
 .daily-hour-label {
   position: absolute;
@@ -1278,8 +1282,13 @@ function setupTabs() {
       const dailyHeader = document.getElementById('dailyHeader');
       if (btn.dataset.tab === 'daily') {
         document.querySelector('.header').style.display = 'none';
-        document.querySelector('.tab-bar').style.top = '0';
         dailyHeader.style.display = '';
+        // Position tab-bar below daily header
+        setTimeout(() => {
+          const dh = dailyHeader.offsetHeight;
+          document.querySelector('.tab-bar').style.top = dh + 'px';
+          document.querySelector('.content').style.paddingTop = (dh + document.querySelector('.tab-bar').offsetHeight) + 'px';
+        }, 10);
       } else {
         dailyHeader.style.display = 'none';
         document.querySelector('.header').style.display = '';
