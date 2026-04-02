@@ -239,6 +239,159 @@ body {
   margin-bottom: 8px;
 }
 
+/* === Task Tab === */
+.task-filter {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.task-filter-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--white);
+  color: var(--text-light);
+  cursor: pointer;
+}
+.task-filter-btn.active {
+  background: var(--navy);
+  color: var(--white);
+  border-color: var(--navy);
+}
+.task-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy);
+  margin: 16px 0 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.task-list { list-style: none; }
+.task-item {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.task-item.done { opacity: 0.5; }
+.task-item.done .task-title { text-decoration: line-through; }
+.task-check {
+  width: 22px; height: 22px;
+  accent-color: var(--navy);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.task-info { flex: 1; min-width: 0; }
+.task-title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  word-break: break-word;
+}
+.task-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.task-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: var(--white);
+}
+.task-badge.high { background: var(--accent); }
+.task-badge.mid { background: var(--orange); }
+.task-badge.low { background: #95a5a6; }
+.task-due {
+  font-size: 11px;
+  color: var(--text-light);
+}
+.task-due.overdue { color: var(--accent); font-weight: 600; }
+.task-status-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text-light);
+  border: 1px solid var(--border);
+}
+.task-status-badge.in-progress { background: #e3f2fd; color: #1565c0; border-color: #90caf9; }
+.task-note {
+  font-size: 12px;
+  color: var(--text-light);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.task-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.task-action-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.5;
+}
+.task-add-fab {
+  position: fixed;
+  bottom: 76px; right: 20px;
+  width: 48px; height: 48px;
+  background: var(--navy);
+  color: var(--white);
+  border: none;
+  border-radius: 50%;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  z-index: 90;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.task-add-fab.visible { display: flex; }
+.task-form-modal .modal {
+  max-height: 90vh;
+}
+.task-form-modal label {
+  font-size: 13px;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 4px;
+  margin-top: 12px;
+}
+.task-form-modal label:first-child { margin-top: 0; }
+.task-form-modal input[type="text"],
+.task-form-modal input[type="date"],
+.task-form-modal select,
+.task-form-modal textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+}
+.task-form-modal textarea { height: 60px; resize: vertical; }
+.task-count {
+  font-size: 12px;
+  color: var(--text-light);
+  text-align: right;
+  margin-bottom: 4px;
+}
+
 /* === Placeholder Tabs === */
 .placeholder {
   text-align: center;
@@ -400,11 +553,14 @@ body {
 
   <!-- Task Tab -->
   <div class="tab-content" id="tab-task">
-    <div class="placeholder">
-      <div class="placeholder-icon">✅</div>
-      <div class="placeholder-title">Task</div>
-      <div class="placeholder-text">タスク機能は<br>Phase 2 で実装予定です</div>
+    <div class="task-filter">
+      <button class="task-filter-btn active" data-filter="active" onclick="filterTasks('active')">未完了</button>
+      <button class="task-filter-btn" data-filter="all" onclick="filterTasks('all')">全て</button>
+      <button class="task-filter-btn" data-filter="done" onclick="filterTasks('done')">完了</button>
+      <button class="task-filter-btn" data-filter="shopping" onclick="filterTasks('shopping')">買い物</button>
     </div>
+    <div class="task-count" id="taskCount"></div>
+    <ul class="task-list" id="taskList"></ul>
   </div>
 
   <!-- Note Tab -->
@@ -422,7 +578,41 @@ body {
   </div>
 </div>
 
+<button class="task-add-fab" id="taskAddBtn" onclick="openTaskForm()">+</button>
 <button class="settings-fab" id="settingsBtn">⚙</button>
+
+<!-- Task Form Modal -->
+<div class="modal-overlay task-form-modal" id="taskFormModal">
+  <div class="modal">
+    <h2 id="taskFormTitle">タスク追加</h2>
+    <input type="hidden" id="taskEditId">
+    <label>タスク名</label>
+    <input type="text" id="taskTitleInput" placeholder="タスク名を入力">
+    <label>優先度</label>
+    <select id="taskPriorityInput">
+      <option value="高">高</option>
+      <option value="中" selected>中</option>
+      <option value="低">低</option>
+    </select>
+    <label>期限</label>
+    <input type="date" id="taskDueInput">
+    <label>ステータス</label>
+    <select id="taskStatusInput">
+      <option value="未着手">未着手</option>
+      <option value="進行中">進行中</option>
+      <option value="完了">完了</option>
+    </select>
+    <label>メモ</label>
+    <textarea id="taskNoteInput" placeholder="メモ（任意）"></textarea>
+    <label style="margin-top:12px;">
+      <input type="checkbox" id="taskShoppingCheck" style="width:18px;height:18px;accent-color:var(--navy);vertical-align:middle;"> 買い物リスト
+    </label>
+    <div class="modal-btns" style="margin-top:16px;">
+      <button class="btn-secondary" onclick="closeTaskForm()">キャンセル</button>
+      <button class="btn-primary" onclick="saveTask()">保存</button>
+    </div>
+  </div>
+</div>
 
 <!-- Settings Modal -->
 <div class="modal-overlay" id="settingsModal">
@@ -447,14 +637,19 @@ body {
 // ============================================================
 
 const STORAGE_KEY = 'personal-portal-notes';
+const TASK_STORAGE_KEY = 'personal-portal-tasks';
 const SYNC_URL_KEY = 'personal-portal-sync-url';
 let notes = [];
+let tasks = [];
+let taskFilter = 'active';
 
 // --- Init ---
 function init() {
   updateHeaderDate();
   loadNotes();
+  loadTasks();
   renderNotes();
+  renderTasks();
   setupTabs();
   setupSearch();
   setupSettings();
@@ -477,6 +672,9 @@ function setupTabs() {
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      const fab = document.getElementById('taskAddBtn');
+      if (btn.dataset.tab === 'task') { fab.classList.add('visible'); }
+      else { fab.classList.remove('visible'); }
     });
   });
 }
@@ -689,9 +887,9 @@ function pullFromRemote() {
   if (!url) return;
   const callbackName = 'portalCallback_' + Date.now();
   window[callbackName] = function(data) {
-    if (data && data.success && data.notes) {
-      mergeNotes(data.notes);
-      renderNotes();
+    if (data && data.success) {
+      if (data.notes) { mergeNotes(data.notes); renderNotes(); }
+      if (data.tasks) { mergeTasks(data.tasks); renderTasks(); }
     }
     delete window[callbackName];
     const s = document.getElementById('pull-script');
@@ -699,7 +897,7 @@ function pullFromRemote() {
   };
   const script = document.createElement('script');
   script.id = 'pull-script';
-  script.src = url + '?callback=' + callbackName + '&type=notes';
+  script.src = url + '?callback=' + callbackName + '&type=all';
   document.body.appendChild(script);
   setTimeout(() => {
     delete window[callbackName];
@@ -720,6 +918,20 @@ function mergeNotes(remote) {
   if (added > 0) {
     notes.sort((a, b) => new Date(b.created) - new Date(a.created));
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+  }
+}
+
+function mergeTasks(remote) {
+  const localIds = new Set(tasks.map(t => t.id));
+  let added = 0;
+  remote.forEach(r => {
+    if (!localIds.has(r.id)) {
+      tasks.push(r);
+      added++;
+    }
+  });
+  if (added > 0) {
+    localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(tasks));
   }
 }
 
@@ -760,6 +972,225 @@ function testConnection() {
   }, 15000);
 }
 
+// ============================================================
+// Tasks
+// ============================================================
+
+function loadTasks() {
+  try {
+    tasks = JSON.parse(localStorage.getItem(TASK_STORAGE_KEY) || '[]');
+  } catch(e) { tasks = []; }
+}
+
+function saveTasks() {
+  localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(tasks));
+  syncTasksToRemote();
+}
+
+function filterTasks(f) {
+  taskFilter = f;
+  document.querySelectorAll('.task-filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === f);
+  });
+  renderTasks();
+}
+
+function renderTasks() {
+  const list = document.getElementById('taskList');
+  const countEl = document.getElementById('taskCount');
+  const priorityOrder = {'高': 0, '中': 1, '低': 2};
+
+  let filtered = tasks;
+  if (taskFilter === 'active') {
+    filtered = tasks.filter(t => t.status !== '完了');
+  } else if (taskFilter === 'done') {
+    filtered = tasks.filter(t => t.status === '完了');
+  } else if (taskFilter === 'shopping') {
+    filtered = tasks.filter(t => t.shopping && t.status !== '完了');
+  }
+
+  filtered.sort((a, b) => {
+    const pa = priorityOrder[a.priority] || 1;
+    const pb = priorityOrder[b.priority] || 1;
+    if (pa !== pb) return pa - pb;
+    if (a.due && b.due) return a.due.localeCompare(b.due);
+    if (a.due) return -1;
+    if (b.due) return 1;
+    return 0;
+  });
+
+  const activeCount = tasks.filter(t => t.status !== '完了').length;
+  countEl.textContent = taskFilter === 'all' ? `${tasks.length}件（未完了: ${activeCount}件）` :
+    taskFilter === 'shopping' ? `買い物: ${filtered.length}件` :
+    `${filtered.length}件`;
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="note-empty"><div class="note-empty-icon">✅</div><div class="note-empty-text">' +
+      (taskFilter === 'shopping' ? '買い物リストは空です' : 'タスクはありません') + '</div></div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(task => {
+    const isDone = task.status === '完了';
+    const doneClass = isDone ? ' done' : '';
+    const checked = isDone ? 'checked' : '';
+    const pClass = task.priority === '高' ? 'high' : task.priority === '低' ? 'low' : 'mid';
+    const statusClass = task.status === '進行中' ? ' in-progress' : '';
+
+    let dueHtml = '';
+    if (task.due) {
+      const today = new Date().toISOString().slice(0, 10);
+      const isOverdue = task.due < today && !isDone;
+      dueHtml = `<span class="task-due${isOverdue ? ' overdue' : ''}">${formatDue(task.due)}</span>`;
+    }
+
+    const noteHtml = task.note ? `<div class="task-note">${escapeHtml(task.note)}</div>` : '';
+    const shopIcon = task.shopping ? '🛒 ' : '';
+
+    return `
+      <li class="task-item${doneClass}" data-id="${task.id}">
+        <input type="checkbox" class="task-check" ${checked} onchange="toggleTaskDone(${task.id})">
+        <div class="task-info">
+          <div class="task-title">${shopIcon}${escapeHtml(task.title)}</div>
+          <div class="task-meta">
+            <span class="task-badge ${pClass}">${task.priority}</span>
+            ${!isDone ? `<span class="task-status-badge${statusClass}">${task.status}</span>` : ''}
+            ${dueHtml}
+          </div>
+          ${noteHtml}
+        </div>
+        <div class="task-actions">
+          <button class="task-action-btn" onclick="editTask(${task.id})">✏️</button>
+          <button class="task-action-btn" onclick="deleteTask(${task.id})">🗑</button>
+        </div>
+      </li>`;
+  }).join('');
+}
+
+function formatDue(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.round((d - today) / 86400000);
+  const label = `${d.getMonth()+1}/${d.getDate()}`;
+  if (diff < 0) return `${label}（${Math.abs(diff)}日超過）`;
+  if (diff === 0) return `${label}（今日）`;
+  if (diff === 1) return `${label}（明日）`;
+  return label;
+}
+
+function toggleTaskDone(id) {
+  const task = tasks.find(t => t.id === id);
+  if (task) {
+    if (task.status === '完了') {
+      task.status = '未着手';
+      task.completedDate = '';
+    } else {
+      task.status = '完了';
+      task.completedDate = new Date().toISOString().slice(0, 10);
+    }
+    saveTasks();
+    renderTasks();
+  }
+}
+
+function openTaskForm(id) {
+  document.getElementById('taskFormTitle').textContent = id ? 'タスク編集' : 'タスク追加';
+  document.getElementById('taskEditId').value = id || '';
+  if (id) {
+    const t = tasks.find(x => x.id === id);
+    if (t) {
+      document.getElementById('taskTitleInput').value = t.title;
+      document.getElementById('taskPriorityInput').value = t.priority;
+      document.getElementById('taskDueInput').value = t.due || '';
+      document.getElementById('taskStatusInput').value = t.status;
+      document.getElementById('taskNoteInput').value = t.note || '';
+      document.getElementById('taskShoppingCheck').checked = !!t.shopping;
+    }
+  } else {
+    document.getElementById('taskTitleInput').value = '';
+    document.getElementById('taskPriorityInput').value = '中';
+    document.getElementById('taskDueInput').value = '';
+    document.getElementById('taskStatusInput').value = '未着手';
+    document.getElementById('taskNoteInput').value = '';
+    document.getElementById('taskShoppingCheck').checked = false;
+  }
+  document.getElementById('taskFormModal').classList.add('active');
+  setTimeout(() => document.getElementById('taskTitleInput').focus(), 100);
+}
+
+function closeTaskForm() {
+  document.getElementById('taskFormModal').classList.remove('active');
+}
+
+function editTask(id) { openTaskForm(id); }
+
+function saveTask() {
+  const title = document.getElementById('taskTitleInput').value.trim();
+  if (!title) { showToast('タスク名を入力してください'); return; }
+  const editId = document.getElementById('taskEditId').value;
+  const data = {
+    title: title,
+    priority: document.getElementById('taskPriorityInput').value,
+    due: document.getElementById('taskDueInput').value,
+    status: document.getElementById('taskStatusInput').value,
+    note: document.getElementById('taskNoteInput').value.trim(),
+    shopping: document.getElementById('taskShoppingCheck').checked,
+  };
+
+  if (editId) {
+    const t = tasks.find(x => x.id === Number(editId));
+    if (t) Object.assign(t, data);
+    showToast('タスクを更新しました');
+  } else {
+    tasks.push({
+      id: Date.now(),
+      ...data,
+      created: new Date().toISOString().slice(0, 10),
+      completedDate: '',
+    });
+    showToast('タスクを追加しました');
+  }
+  saveTasks();
+  renderTasks();
+  closeTaskForm();
+}
+
+function deleteTask(id) {
+  if (confirm('このタスクを削除しますか？')) {
+    tasks = tasks.filter(t => t.id !== id);
+    saveTasks();
+    renderTasks();
+    showToast('削除しました');
+  }
+}
+
+function syncTasksToRemote() {
+  const url = getSyncUrl();
+  if (!url) return;
+  try {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = url;
+    form.target = 'sync-frame';
+    const ta = document.createElement('textarea');
+    ta.name = 'data';
+    ta.value = JSON.stringify({ type: 'tasks', items: tasks });
+    form.appendChild(ta);
+    document.body.appendChild(form);
+    let iframe = document.getElementById('sync-frame');
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'sync-frame';
+      iframe.name = 'sync-frame';
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+    }
+    form.submit();
+    document.body.removeChild(form);
+  } catch(e) { console.error('Task sync error:', e); }
+}
+
 // --- Toast ---
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -778,6 +1209,11 @@ window.PortalAPI = {
   addNote: addNote,
   getNotes: () => notes,
   deleteNote: deleteNote,
+  getTasks: () => tasks,
+  addTask: function(title, priority, due, note, shopping) {
+    tasks.push({ id: Date.now(), title, priority: priority||'中', due: due||'', status: '未着手', note: note||'', shopping: !!shopping, created: new Date().toISOString().slice(0,10), completedDate: '' });
+    saveTasks(); renderTasks();
+  },
 };
 
 // --- Start ---
