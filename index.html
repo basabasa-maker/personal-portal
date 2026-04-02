@@ -1478,53 +1478,28 @@ function getSyncUrl() {
 function syncToRemote() {
   const url = getSyncUrl();
   if (!url) return;
-  try {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = url;
-    form.target = 'sync-frame';
-    const ta = document.createElement('textarea');
-    ta.name = 'data';
-    ta.value = JSON.stringify({ type: 'notes', items: notes });
-    form.appendChild(ta);
-    document.body.appendChild(form);
-    let iframe = document.getElementById('sync-frame');
-    if (!iframe) {
-      iframe = document.createElement('iframe');
-      iframe.id = 'sync-frame';
-      iframe.name = 'sync-frame';
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-    }
-    form.submit();
-    document.body.removeChild(form);
-  } catch(e) { console.error('Sync error:', e); }
+  fetch(url, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ type: 'notes', items: notes }),
+  }).catch(e => console.error('Sync error:', e));
 }
 
 function pullFromRemote() {
   const url = getSyncUrl();
   if (!url) return;
-  const callbackName = 'portalCallback_' + Date.now();
-  window[callbackName] = function(data) {
-    if (data && data.success) {
-      if (data.notes) { mergeNotes(data.notes); renderNotes(); }
-      if (data.tasks) { mergeTasks(data.tasks); renderTasks(); }
-      if (data.journal) { mergeJournal(data.journal); renderJournalCalendar(); }
-      if (data.daily) { mergeDaily(data.daily); renderDaily(); }
-    }
-    delete window[callbackName];
-    const s = document.getElementById('pull-script');
-    if (s) s.remove();
-  };
-  const script = document.createElement('script');
-  script.id = 'pull-script';
-  script.src = url + '?callback=' + callbackName + '&type=all';
-  document.body.appendChild(script);
-  setTimeout(() => {
-    delete window[callbackName];
-    const s = document.getElementById('pull-script');
-    if (s) s.remove();
-  }, 30000);
+  fetch(url + '?type=all', { mode: 'cors' })
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.success) {
+        if (data.notes) { mergeNotes(data.notes); renderNotes(); }
+        if (data.tasks) { mergeTasks(data.tasks); renderTasks(); }
+        if (data.journal) { mergeJournal(data.journal); renderJournalCalendar(); }
+        if (data.daily) { mergeDaily(data.daily); renderDaily(); }
+      }
+    })
+    .catch(e => console.error('Pull error:', e));
 }
 
 function mergeNotes(remote) {
@@ -1568,29 +1543,21 @@ function testConnection() {
   status.textContent = '接続中...';
   status.className = 'sync-status';
   status.style.display = 'block';
-  const callbackName = 'testCallback_' + Date.now();
-  window[callbackName] = function(data) {
-    if (data && data.success) {
-      status.textContent = '接続成功';
-      status.className = 'sync-status sync-ok';
-    } else {
-      status.textContent = '接続エラー';
+  fetch(url + '?type=test', { mode: 'cors' })
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.success) {
+        status.textContent = '接続成功';
+        status.className = 'sync-status sync-ok';
+      } else {
+        status.textContent = '接続エラー';
+        status.className = 'sync-status sync-err';
+      }
+    })
+    .catch(() => {
+      status.textContent = '接続エラー: URLを確認してください';
       status.className = 'sync-status sync-err';
-    }
-    delete window[callbackName];
-  };
-  const script = document.createElement('script');
-  script.src = url + '?callback=' + callbackName + '&type=test';
-  script.onerror = () => {
-    status.textContent = '接続エラー: URLを確認してください';
-    status.className = 'sync-status sync-err';
-    delete window[callbackName];
-  };
-  document.body.appendChild(script);
-  setTimeout(() => {
-    delete window[callbackName];
-    script.remove();
-  }, 15000);
+    });
 }
 
 // ============================================================
@@ -1835,27 +1802,12 @@ function deleteTask(id) {
 function syncTasksToRemote() {
   const url = getSyncUrl();
   if (!url) return;
-  try {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = url;
-    form.target = 'sync-frame';
-    const ta = document.createElement('textarea');
-    ta.name = 'data';
-    ta.value = JSON.stringify({ type: 'tasks', items: tasks });
-    form.appendChild(ta);
-    document.body.appendChild(form);
-    let iframe = document.getElementById('sync-frame');
-    if (!iframe) {
-      iframe = document.createElement('iframe');
-      iframe.id = 'sync-frame';
-      iframe.name = 'sync-frame';
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-    }
-    form.submit();
-    document.body.removeChild(form);
-  } catch(e) { console.error('Task sync error:', e); }
+  fetch(url, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ type: 'tasks', items: tasks }),
+  }).catch(e => console.error('Task sync error:', e));
 }
 
 function changeTaskSort(val) {
@@ -2057,27 +2009,12 @@ function deleteDailyEntry(id) {
 function syncDailyToRemote() {
   const url = getSyncUrl();
   if (!url) return;
-  try {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = url;
-    form.target = 'sync-frame';
-    const ta = document.createElement('textarea');
-    ta.name = 'data';
-    ta.value = JSON.stringify({ type: 'daily', items: dailyEntries });
-    form.appendChild(ta);
-    document.body.appendChild(form);
-    let iframe = document.getElementById('sync-frame');
-    if (!iframe) {
-      iframe = document.createElement('iframe');
-      iframe.id = 'sync-frame';
-      iframe.name = 'sync-frame';
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-    }
-    form.submit();
-    document.body.removeChild(form);
-  } catch(e) { console.error('Daily sync error:', e); }
+  fetch(url, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ type: 'daily', items: dailyEntries }),
+  }).catch(e => console.error('Daily sync error:', e));
 }
 
 function mergeDaily(remote) {
@@ -2247,27 +2184,12 @@ function deleteJournalEntry(id) {
 function syncJournalToRemote() {
   const url = getSyncUrl();
   if (!url) return;
-  try {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = url;
-    form.target = 'sync-frame';
-    const ta = document.createElement('textarea');
-    ta.name = 'data';
-    ta.value = JSON.stringify({ type: 'journal', items: journalEntries });
-    form.appendChild(ta);
-    document.body.appendChild(form);
-    let iframe = document.getElementById('sync-frame');
-    if (!iframe) {
-      iframe = document.createElement('iframe');
-      iframe.id = 'sync-frame';
-      iframe.name = 'sync-frame';
-      iframe.style.display = 'none';
-      document.body.appendChild(iframe);
-    }
-    form.submit();
-    document.body.removeChild(form);
-  } catch(e) { console.error('Journal sync error:', e); }
+  fetch(url, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ type: 'journal', items: journalEntries }),
+  }).catch(e => console.error('Journal sync error:', e));
 }
 
 function mergeJournal(remote) {
