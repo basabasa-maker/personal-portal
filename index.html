@@ -1075,8 +1075,8 @@ function renderTasks() {
   const statusOrder = {'未着手': 0, '進行中': 1, '完了': 2};
   if (taskSort === 'priority') {
     filtered.sort((a, b) => {
-      const pa = priorityOrder[a.priority] || 1;
-      const pb = priorityOrder[b.priority] || 1;
+      const pa = priorityOrder[a.priority] ?? 1;
+      const pb = priorityOrder[b.priority] ?? 1;
       if (pa !== pb) return pa - pb;
       if (a.due && b.due) return a.due.localeCompare(b.due);
       if (a.due) return -1;
@@ -1097,7 +1097,7 @@ function renderTasks() {
       const sa = statusOrder[a.status] ?? 1;
       const sb = statusOrder[b.status] ?? 1;
       if (sa !== sb) return sa - sb;
-      return (priorityOrder[a.priority] || 1) - (priorityOrder[b.priority] || 1);
+      return (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1);
     });
   }
 
