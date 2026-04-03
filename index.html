@@ -833,6 +833,15 @@ body {
   flex-shrink: 0;
 }
 .daily-block-del:active { opacity: 1; }
+.daily-block.continuation {
+  opacity: 0.55;
+  border-radius: 0 6px 6px 0;
+  padding: 3px 10px;
+  font-size: 11px;
+}
+.daily-block.continuation .daily-block-text {
+  font-style: italic;
+}
 
 /* Daily Check Section */
 .daily-check-list {
@@ -1891,6 +1900,24 @@ function renderDaily() {
   renderDailyCheck();
 }
 
+function fmtTime(val) {
+  const h = Math.floor(val);
+  const m = Math.round((val - h) * 60);
+  return h + ':' + String(m).padStart(2, '0');
+}
+
+function entryCoversHour(e, h) {
+  const start = e.hour;
+  let end = e.endHour;
+  if (end === undefined || end === '' || end === start) return start === h;
+  // Normalize for 4AM-3AM wrap: convert to offset from 4
+  function toOffset(v) { return v < 4 ? v + 24 : v; }
+  const sOff = toOffset(start);
+  const eOff = toOffset(end);
+  const hOff = toOffset(h);
+  return hOff >= sOff && hOff < eOff;
+}
+
 function renderDailyTimeline() {
   const timeline = document.getElementById('dailyTimeline');
   const now = new Date();
@@ -1903,39 +1930,53 @@ function renderDailyTimeline() {
   const calEntries = dailyCalendarEvents.filter(e => e.date === dailyDate);
 
   timeline.innerHTML = DAILY_HOURS.map(h => {
-    // User entries that start at this hour
-    const hourEntries = dayEntries.filter(e => e.hour === h);
-    // Calendar events that start at this hour
-    const hourCalEntries = calEntries.filter(e => e.hour === h);
+    // All entries (user + cal) that cover this hour
+    const hourCalEntries = calEntries.filter(e => entryCoversHour(e, h));
+    const hourEntries = dayEntries.filter(e => entryCoversHour(e, h));
     const allEntries = hourCalEntries.length + hourEntries.length;
     const nowClass = (isToday && h === currentHour) ? ' now' : '';
     const hasClass = allEntries > 0 ? ' has-entries' : '';
 
     let blocksHtml = '';
 
-    // Calendar events first (plan blocks with calendar icon)
+    // Calendar events (plan blocks with calendar icon)
     if (hourCalEntries.length > 0) {
       blocksHtml += hourCalEntries.map(e => {
-        const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
-          ? `<div class="daily-block-time">${e.hour}:00 〜 ${e.endHour}:00</div>`
-          : `<div class="daily-block-time">${e.hour}:00</div>`;
-        const calLabel = e.calendarName ? `<span class="daily-cal-label">${escapeHtml(e.calendarName)}</span>` : '';
-        return `<div class="daily-block plan calendar-event">
-          <div class="daily-block-text">${timeLabel}<span class="daily-cal-icon">&#x1F4C5;</span> ${escapeHtml(e.text)}${calLabel}</div>
-        </div>`;
+        const isStart = Math.floor(e.hour) === h;
+        if (isStart) {
+          const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
+            ? `<div class="daily-block-time">${fmtTime(e.hour)} 〜 ${fmtTime(e.endHour)}</div>`
+            : `<div class="daily-block-time">${fmtTime(e.hour)}</div>`;
+          const calLabel = e.calendarName ? `<span class="daily-cal-label">${escapeHtml(e.calendarName)}</span>` : '';
+          return `<div class="daily-block plan calendar-event">
+            <div class="daily-block-text">${timeLabel}<span class="daily-cal-icon">&#x1F4C5;</span> ${escapeHtml(e.text)}${calLabel}</div>
+          </div>`;
+        } else {
+          const calLabel = e.calendarName ? `<span class="daily-cal-label">${escapeHtml(e.calendarName)}</span>` : '';
+          return `<div class="daily-block plan calendar-event continuation">
+            <div class="daily-block-text">┃ ${escapeHtml(e.text)}${calLabel}</div>
+          </div>`;
+        }
       }).join('');
     }
 
     // User-created entries
     if (hourEntries.length > 0) {
       blocksHtml += hourEntries.map(e => {
-        const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
-          ? `<div class="daily-block-time">${e.hour}:00 〜 ${e.endHour}:00</div>`
-          : `<div class="daily-block-time">${e.hour}:00</div>`;
-        return `<div class="daily-block ${e.type}">
-          <div class="daily-block-text">${timeLabel}${escapeHtml(e.text)}</div>
-          <button class="daily-block-del" onclick="event.stopPropagation();deleteDailyEntry(${e.id})">x</button>
-        </div>`;
+        const isStart = Math.floor(e.hour) === h;
+        if (isStart) {
+          const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
+            ? `<div class="daily-block-time">${fmtTime(e.hour)} 〜 ${fmtTime(e.endHour)}</div>`
+            : `<div class="daily-block-time">${fmtTime(e.hour)}</div>`;
+          return `<div class="daily-block ${e.type}">
+            <div class="daily-block-text">${timeLabel}${escapeHtml(e.text)}</div>
+            <button class="daily-block-del" onclick="event.stopPropagation();deleteDailyEntry(${e.id})">x</button>
+          </div>`;
+        } else {
+          return `<div class="daily-block ${e.type} continuation">
+            <div class="daily-block-text">┃ ${escapeHtml(e.text)}</div>
+          </div>`;
+        }
       }).join('');
     }
 
@@ -1988,9 +2029,10 @@ function populateHourSelects() {
   if (startSel.options.length > 0) return;
   DAILY_HOURS.forEach(h => {
     startSel.add(new Option(`${h}:00`, h));
+    startSel.add(new Option(`${h}:30`, h + 0.5));
     endSel.add(new Option(`${h}:00`, h));
+    endSel.add(new Option(`${h}:30`, h + 0.5));
   });
-  // Also add 4:00 as end (next day end)
 }
 
 function openDailyInput(hour) {
@@ -1999,7 +2041,8 @@ function openDailyInput(hour) {
   setDailyType('actual');
   document.getElementById('dailyStartHour').value = hour;
   // Default end = hour + 1
-  const nextH = DAILY_HOURS[(DAILY_HOURS.indexOf(hour) + 1) % DAILY_HOURS.length];
+  const idx = DAILY_HOURS.indexOf(hour);
+  const nextH = idx >= 0 ? DAILY_HOURS[(idx + 1) % DAILY_HOURS.length] : hour + 1;
   document.getElementById('dailyEndHour').value = nextH;
   document.getElementById('dailyInputTitle').textContent = '記録を追加';
   document.getElementById('dailyInputModal').classList.add('active');
@@ -2021,8 +2064,8 @@ function setDailyType(type) {
 function saveDailyEntry() {
   const text = document.getElementById('dailyInputText').value.trim();
   if (!text) { showToast('内容を入力してください'); return; }
-  const startHour = Number(document.getElementById('dailyStartHour').value);
-  const endHour = Number(document.getElementById('dailyEndHour').value);
+  const startHour = parseFloat(document.getElementById('dailyStartHour').value);
+  const endHour = parseFloat(document.getElementById('dailyEndHour').value);
 
   dailyEntries.push({
     id: Date.now(),
@@ -2318,8 +2361,8 @@ window.PortalAPI = {
     saveJournal(); renderJournalCalendar();
   },
   getDaily: () => dailyEntries,
-  addDaily: function(date, hour, text, type) {
-    dailyEntries.push({ id: Date.now(), date: date, hour: hour, type: type||'plan', text: text, created: new Date().toISOString() });
+  addDaily: function(date, hour, text, type, endHour) {
+    dailyEntries.push({ id: Date.now(), date: date, hour: hour, endHour: endHour||hour, type: type||'plan', text: text, created: new Date().toISOString() });
     saveDaily(); renderDaily();
   },
 };
