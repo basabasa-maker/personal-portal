@@ -1500,6 +1500,7 @@ function setupSettings() {
     localStorage.setItem(SYNC_URL_KEY, urlInput.value.trim());
     modal.classList.remove('active');
     showToast('設定を保存しました');
+    setTimeout(() => pullFromRemote(), 300);
   });
   test.addEventListener('click', () => testConnection());
 }
@@ -1527,10 +1528,31 @@ function pullFromRemote() {
     .then(r => r.json())
     .then(data => {
       if (data && data.success) {
-        if (data.notes) { mergeNotes(data.notes); renderNotes(); }
-        if (data.tasks) { mergeTasks(data.tasks); renderTasks(); }
-        if (data.journal) { mergeJournal(data.journal); renderJournalCalendar(); }
-        if (data.daily) { mergeDaily(data.daily); renderDaily(); }
+        // If local is empty, replace entirely from remote
+        if (data.notes) {
+          if (notes.length === 0 && data.notes.length > 0) {
+            notes = data.notes; localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+          } else { mergeNotes(data.notes); }
+          renderNotes();
+        }
+        if (data.tasks) {
+          if (tasks.length === 0 && data.tasks.length > 0) {
+            tasks = data.tasks; localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(tasks));
+          } else { mergeTasks(data.tasks); }
+          renderTasks();
+        }
+        if (data.journal) {
+          if (journalEntries.length === 0 && data.journal.length > 0) {
+            journalEntries = data.journal; localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(journalEntries));
+          } else { mergeJournal(data.journal); }
+          renderJournalCalendar();
+        }
+        if (data.daily) {
+          if (dailyEntries.length === 0 && data.daily.length > 0) {
+            dailyEntries = data.daily; localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify(dailyEntries));
+          } else { mergeDaily(data.daily); }
+          renderDaily();
+        }
       }
     })
     .catch(e => console.error('Pull error:', e));
@@ -1858,6 +1880,7 @@ let dailyEntries = [];
 let dailyCalendarEvents = []; // Calendar events (not saved to localStorage)
 let dailyDate = null; // 'YYYY-MM-DD'
 let dailyEntryType = 'actual';
+let dailyEditingId = null; // null = new entry, number = editing existing
 
 // Hours: 4,5,6,...,23,0,1,2,3 (4:00 AM to next 3:00 AM = 24 hours)
 const DAILY_HOURS = [4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3];
@@ -1982,7 +2005,7 @@ function renderDailyTimeline() {
       const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
         ? `<div class="daily-block-time">${fmtTime(e.hour)} 〜 ${fmtTime(e.endHour)}</div>`
         : `<div class="daily-block-time">${fmtTime(e.hour)}</div>`;
-      blocksHtml += `<div class="daily-block ${e.type}${spanStyle}">
+      blocksHtml += `<div class="daily-block ${e.type}${spanStyle}" onclick="event.stopPropagation();editDailyEntry(${e.id})">
         <div class="daily-block-text">${timeLabel}${escapeHtml(e.text)}</div>
         <button class="daily-block-del" onclick="event.stopPropagation();deleteDailyEntry(${e.id})">x</button>
       </div>`;
@@ -2045,10 +2068,10 @@ function populateHourSelects() {
 
 function openDailyInput(hour) {
   populateHourSelects();
+  dailyEditingId = null;
   document.getElementById('dailyInputText').value = '';
   setDailyType('actual');
   document.getElementById('dailyStartHour').value = hour;
-  // Default end = hour + 1
   const idx = DAILY_HOURS.indexOf(hour);
   const nextH = idx >= 0 ? DAILY_HOURS[(idx + 1) % DAILY_HOURS.length] : hour + 1;
   document.getElementById('dailyEndHour').value = nextH;
@@ -2057,7 +2080,22 @@ function openDailyInput(hour) {
   setTimeout(() => document.getElementById('dailyInputText').focus(), 100);
 }
 
+function editDailyEntry(id) {
+  const entry = dailyEntries.find(e => e.id === id);
+  if (!entry) return;
+  populateHourSelects();
+  dailyEditingId = id;
+  document.getElementById('dailyInputText').value = entry.text;
+  setDailyType(entry.type);
+  document.getElementById('dailyStartHour').value = entry.hour;
+  document.getElementById('dailyEndHour').value = entry.endHour || entry.hour;
+  document.getElementById('dailyInputTitle').textContent = '記録を編集';
+  document.getElementById('dailyInputModal').classList.add('active');
+  setTimeout(() => document.getElementById('dailyInputText').focus(), 100);
+}
+
 function closeDailyInput() {
+  dailyEditingId = null;
   document.getElementById('dailyInputModal').classList.remove('active');
 }
 
@@ -2075,26 +2113,42 @@ function saveDailyEntry() {
   const startHour = parseFloat(document.getElementById('dailyStartHour').value);
   const endHour = parseFloat(document.getElementById('dailyEndHour').value);
 
-  dailyEntries.push({
-    id: Date.now(),
-    date: dailyDate,
-    hour: startHour,
-    endHour: endHour,
-    type: dailyEntryType,
-    text: text,
-    created: new Date().toISOString(),
-  });
+  if (dailyEditingId !== null) {
+    // Update existing entry
+    const entry = dailyEntries.find(e => e.id === dailyEditingId);
+    if (entry) {
+      entry.text = text;
+      entry.hour = startHour;
+      entry.endHour = endHour;
+      entry.type = dailyEntryType;
+    }
+    dailyEditingId = null;
+    showToast('更新しました');
+  } else {
+    // New entry
+    dailyEntries.push({
+      id: Date.now(),
+      date: dailyDate,
+      hour: startHour,
+      endHour: endHour,
+      type: dailyEntryType,
+      text: text,
+      created: new Date().toISOString(),
+    });
+    showToast('保存しました');
+  }
 
   saveDaily();
   closeDailyInput();
   renderDailyTimeline();
-  showToast('保存しました');
 }
 
 function deleteDailyEntry(id) {
+  if (!confirm('この記録を削除しますか？')) return;
   dailyEntries = dailyEntries.filter(e => e.id !== id);
   saveDaily();
   renderDailyTimeline();
+  showToast('削除しました');
 }
 
 function syncDailyToRemote() {
