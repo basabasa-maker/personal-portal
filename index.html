@@ -833,6 +833,15 @@ body {
   flex-shrink: 0;
 }
 .daily-block-del:active { opacity: 1; }
+/* Span start: the hour where a multi-hour block begins */
+.daily-hour.span-start > .daily-hour-content {
+  padding-bottom: 0;
+}
+.daily-hour.span-start .daily-block {
+  border-radius: 6px 6px 0 0;
+  margin-bottom: 0;
+}
+/* Continuation: middle/end hours of a multi-hour block */
 .daily-hour.continuation-hour {
   border-top: none;
 }
@@ -840,20 +849,20 @@ body {
   padding-top: 0;
   padding-bottom: 0;
   min-height: 0;
-  height: 44px;
 }
 .daily-block.continuation {
   padding: 0;
   margin: 0;
   border-radius: 0;
-  background: none !important;
-  border-left: 3px solid currentColor;
-  height: 100%;
   min-height: 44px;
 }
-.daily-block.continuation.plan { color: var(--text); }
-.daily-block.continuation.plan.calendar-event { color: #1a73e8; }
-.daily-block.continuation.actual { color: var(--accent); }
+.daily-block.continuation.plan { background: #f0f0f0; border-left: 3px solid var(--text); }
+.daily-block.continuation.plan.calendar-event { background: #e8f0fe; border-left: 3px solid #1a73e8; }
+.daily-block.continuation.actual { background: #fce4ec; border-left: 3px solid var(--accent); }
+/* Last continuation block: round bottom corners */
+.daily-hour.span-end .daily-block.continuation {
+  border-radius: 0 0 6px 6px;
+}
 
 /* Daily Check Section */
 .daily-check-list {
@@ -1987,13 +1996,23 @@ function renderDailyTimeline() {
       }).join('');
     }
 
-    // Check if this hour ONLY has continuation blocks (no start blocks)
-    const hasStartCal = hourCalEntries.some(e => Math.floor(e.hour) === h);
-    const hasStartUser = hourEntries.some(e => Math.floor(e.hour) === h);
-    const onlyContinuation = allEntries > 0 && !hasStartCal && !hasStartUser;
-    const contClass = onlyContinuation ? ' continuation-hour' : '';
+    // Determine span classes for multi-hour blocks
+    const allHere = [...hourCalEntries, ...hourEntries];
+    const hasStart = allHere.some(e => Math.floor(e.hour) === h);
+    const hasSpanStart = allHere.some(e => Math.floor(e.hour) === h && e.endHour !== undefined && e.endHour !== e.hour);
+    const onlyContinuation = allEntries > 0 && !hasStart;
+    // Check if next hour still has continuation of any entry here
+    const nextH = DAILY_HOURS[(DAILY_HOURS.indexOf(h) + 1) % DAILY_HOURS.length];
+    const continuesNext = allHere.some(e => entryCoversHour(e, nextH));
 
-    return `<div class="daily-hour${nowClass}${hasClass}${contClass}" onclick="openDailyInput(${h})">
+    let spanClass = '';
+    if (hasSpanStart) spanClass += ' span-start';
+    if (onlyContinuation) {
+      spanClass += ' continuation-hour';
+      if (!continuesNext) spanClass += ' span-end';
+    }
+
+    return `<div class="daily-hour${nowClass}${hasClass}${spanClass}" onclick="openDailyInput(${h})">
       <div class="daily-hour-label">${h}</div>
       <div class="daily-hour-content">${blocksHtml}</div>
     </div>`;
