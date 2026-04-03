@@ -51,6 +51,9 @@ function doGet(e) {
     result = getJournal();
   } else if (type === 'daily') {
     result = getDailyEntries();
+  } else if (type === 'calendar') {
+    var date = e.parameter.date || new Date().toISOString().slice(0, 10);
+    result = getCalendarEventsForDaily(date);
   } else if (type === 'all') {
     result = {
       success: true,
@@ -249,7 +252,57 @@ function writeDailySchedule(date, entries) {
   const sheet = getSheet(SHEET_NAMES.daily);
   entries.forEach(entry => {
     const id = Date.now() + Math.floor(Math.random() * 1000);
-    sheet.appendRow([id, date, entry.hour || 0, entry.type || 'plan', entry.text || entry.content, new Date().toISOString()]);
+    sheet.appendRow([id, date, entry.hour || 0, entry.endHour || '', entry.type || 'plan', entry.text || entry.content, new Date().toISOString()]);
   });
   return { success: true, date: date, count: entries.length };
+}
+
+// --- Google Calendar Integration ---
+const CALENDAR_IDS = [
+  {id: 'basabasa@en-conect.com', name: 'プライベート'},
+  {id: 'c_8sv1q87i11lsbql5puu1bto420@group.calendar.google.com', name: '取材'},
+  {id: 'c_d238efeadb857d0cfab95a973626c2f1d3ca5116e2f85f6ccccc21d848694ca5@group.calendar.google.com', name: '取材(調整中)'},
+  {id: 'c_2376883f13ad1c7d785e4b0ec44bf04140ac4609e945563a4491c5bdd922f833@group.calendar.google.com', name: '定期予定'},
+  {id: 'c_4321769af6ef44c4b6014f5d2e464935fc985ad326ff5df54be6587de1869349@group.calendar.google.com', name: '定期予定(仕事)'},
+  {id: 'c_2dd3f3a724074ccfa2c8f674643f3158f3574d9f8d6545fa6a9d35f05e165ecf@group.calendar.google.com', name: '不定期予定(仕事)'},
+];
+
+function getCalendarEventsForDaily(dateStr) {
+  const date = new Date(dateStr + 'T00:00:00');
+  const events = [];
+
+  CALENDAR_IDS.forEach(function(cal) {
+    try {
+      var calendar = CalendarApp.getCalendarById(cal.id);
+      if (!calendar) return;
+      var calEvents = calendar.getEventsForDay(date);
+      calEvents.forEach(function(ev) {
+        if (ev.isAllDayEvent()) return;
+        var start = ev.getStartTime();
+        var end = ev.getEndTime();
+        var loc = ev.getLocation();
+        var text = ev.getTitle();
+        if (loc) text += ' @ ' + loc;
+
+        var endH = end.getHours();
+        if (end.getMinutes() > 0) endH += 1;
+        if (endH === 0 && end.getHours() === 0 && end.getMinutes() === 0) endH = 24;
+
+        events.push({
+          id: 'cal_' + ev.getId().replace(/@.+$/, '').substring(0, 20),
+          date: dateStr,
+          hour: start.getHours(),
+          endHour: endH,
+          type: 'plan',
+          text: text,
+          source: 'calendar',
+          calendarName: cal.name,
+        });
+      });
+    } catch(e) {
+      // Calendar not accessible, skip
+    }
+  });
+
+  return { success: true, events: events, count: events.length };
 }

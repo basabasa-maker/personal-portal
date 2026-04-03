@@ -791,6 +791,24 @@ body {
   color: var(--text);
   border-left: 3px solid var(--text);
 }
+.daily-block.plan.calendar-event {
+  background: #e8f0fe;
+  border-left: 3px solid #1a73e8;
+  color: #1a73e8;
+}
+.daily-cal-icon {
+  font-size: 11px;
+  margin-right: 2px;
+}
+.daily-cal-label {
+  display: inline-block;
+  font-size: 9px;
+  background: rgba(26,115,232,0.12);
+  color: #1a73e8;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
 .daily-block.actual {
   background: #fce4ec;
   color: var(--accent);
@@ -1821,6 +1839,7 @@ function changeTaskSort(val) {
 
 const DAILY_STORAGE_KEY = 'personal-portal-daily';
 let dailyEntries = [];
+let dailyCalendarEvents = []; // Calendar events (not saved to localStorage)
 let dailyDate = null; // 'YYYY-MM-DD'
 let dailyEntryType = 'actual';
 
@@ -1849,6 +1868,7 @@ function initDaily() {
     dailyDate = now.toISOString().slice(0, 10);
   }
   renderDaily();
+  fetchCalendarEvents(dailyDate);
 }
 
 function dailyNavDay(dir) {
@@ -1856,6 +1876,7 @@ function dailyNavDay(dir) {
   d.setDate(d.getDate() + dir);
   dailyDate = d.toISOString().slice(0, 10);
   renderDaily();
+  fetchCalendarEvents(dailyDate);
 }
 
 function renderDaily() {
@@ -1879,16 +1900,35 @@ function renderDailyTimeline() {
     : now.toISOString().slice(0,10));
 
   const dayEntries = dailyEntries.filter(e => e.date === dailyDate);
+  const calEntries = dailyCalendarEvents.filter(e => e.date === dailyDate);
 
   timeline.innerHTML = DAILY_HOURS.map(h => {
-    // Entries that start at this hour
+    // User entries that start at this hour
     const hourEntries = dayEntries.filter(e => e.hour === h);
+    // Calendar events that start at this hour
+    const hourCalEntries = calEntries.filter(e => e.hour === h);
+    const allEntries = hourCalEntries.length + hourEntries.length;
     const nowClass = (isToday && h === currentHour) ? ' now' : '';
-    const hasClass = hourEntries.length > 0 ? ' has-entries' : '';
+    const hasClass = allEntries > 0 ? ' has-entries' : '';
 
     let blocksHtml = '';
+
+    // Calendar events first (plan blocks with calendar icon)
+    if (hourCalEntries.length > 0) {
+      blocksHtml += hourCalEntries.map(e => {
+        const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
+          ? `<div class="daily-block-time">${e.hour}:00 〜 ${e.endHour}:00</div>`
+          : `<div class="daily-block-time">${e.hour}:00</div>`;
+        const calLabel = e.calendarName ? `<span class="daily-cal-label">${escapeHtml(e.calendarName)}</span>` : '';
+        return `<div class="daily-block plan calendar-event">
+          <div class="daily-block-text">${timeLabel}<span class="daily-cal-icon">&#x1F4C5;</span> ${escapeHtml(e.text)}${calLabel}</div>
+        </div>`;
+      }).join('');
+    }
+
+    // User-created entries
     if (hourEntries.length > 0) {
-      blocksHtml = hourEntries.map(e => {
+      blocksHtml += hourEntries.map(e => {
         const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
           ? `<div class="daily-block-time">${e.hour}:00 〜 ${e.endHour}:00</div>`
           : `<div class="daily-block-time">${e.hour}:00</div>`;
@@ -2015,6 +2055,20 @@ function syncDailyToRemote() {
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ type: 'daily', items: dailyEntries }),
   }).catch(e => console.error('Daily sync error:', e));
+}
+
+function fetchCalendarEvents(dateStr) {
+  const url = getSyncUrl();
+  if (!url) return;
+  fetch(url + '?type=calendar&date=' + dateStr, { mode: 'cors' })
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.success && data.events) {
+        dailyCalendarEvents = data.events;
+        renderDailyTimeline();
+      }
+    })
+    .catch(e => console.error('Calendar fetch error:', e));
 }
 
 function mergeDaily(remote) {
