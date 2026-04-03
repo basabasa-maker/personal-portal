@@ -833,13 +833,23 @@ body {
   flex-shrink: 0;
 }
 .daily-block-del:active { opacity: 1; }
+.daily-hour.continuation-hour {
+  border-top: none;
+}
+.daily-hour.continuation-hour > .daily-hour-content {
+  padding-top: 0;
+  padding-bottom: 0;
+  min-height: 0;
+  height: 44px;
+}
 .daily-block.continuation {
   padding: 0;
   margin: 0;
   border-radius: 0;
   background: none !important;
   border-left: 3px solid currentColor;
-  min-height: 36px;
+  height: 100%;
+  min-height: 44px;
 }
 .daily-block.continuation.plan { color: var(--text); }
 .daily-block.continuation.plan.calendar-event { color: #1a73e8; }
@@ -1977,7 +1987,13 @@ function renderDailyTimeline() {
       }).join('');
     }
 
-    return `<div class="daily-hour${nowClass}${hasClass}" onclick="openDailyInput(${h})">
+    // Check if this hour ONLY has continuation blocks (no start blocks)
+    const hasStartCal = hourCalEntries.some(e => Math.floor(e.hour) === h);
+    const hasStartUser = hourEntries.some(e => Math.floor(e.hour) === h);
+    const onlyContinuation = allEntries > 0 && !hasStartCal && !hasStartUser;
+    const contClass = onlyContinuation ? ' continuation-hour' : '';
+
+    return `<div class="daily-hour${nowClass}${hasClass}${contClass}" onclick="openDailyInput(${h})">
       <div class="daily-hour-label">${h}</div>
       <div class="daily-hour-content">${blocksHtml}</div>
     </div>`;
