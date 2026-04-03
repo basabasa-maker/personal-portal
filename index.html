@@ -834,14 +834,16 @@ body {
 }
 .daily-block-del:active { opacity: 1; }
 .daily-block.continuation {
-  opacity: 0.55;
-  border-radius: 0 6px 6px 0;
-  padding: 3px 10px;
-  font-size: 11px;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  background: none !important;
+  border-left: 3px solid currentColor;
+  min-height: 36px;
 }
-.daily-block.continuation .daily-block-text {
-  font-style: italic;
-}
+.daily-block.continuation.plan { color: var(--text); }
+.daily-block.continuation.plan.calendar-event { color: #1a73e8; }
+.daily-block.continuation.actual { color: var(--accent); }
 
 /* Daily Check Section */
 .daily-check-list {
@@ -1952,10 +1954,7 @@ function renderDailyTimeline() {
             <div class="daily-block-text">${timeLabel}<span class="daily-cal-icon">&#x1F4C5;</span> ${escapeHtml(e.text)}${calLabel}</div>
           </div>`;
         } else {
-          const calLabel = e.calendarName ? `<span class="daily-cal-label">${escapeHtml(e.calendarName)}</span>` : '';
-          return `<div class="daily-block plan calendar-event continuation">
-            <div class="daily-block-text">┃ ${escapeHtml(e.text)}${calLabel}</div>
-          </div>`;
+          return `<div class="daily-block plan calendar-event continuation"></div>`;
         }
       }).join('');
     }
@@ -1973,9 +1972,7 @@ function renderDailyTimeline() {
             <button class="daily-block-del" onclick="event.stopPropagation();deleteDailyEntry(${e.id})">x</button>
           </div>`;
         } else {
-          return `<div class="daily-block ${e.type} continuation">
-            <div class="daily-block-text">┃ ${escapeHtml(e.text)}</div>
-          </div>`;
+          return `<div class="daily-block ${e.type} continuation"></div>`;
         }
       }).join('');
     }
