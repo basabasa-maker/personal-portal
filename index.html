@@ -835,10 +835,10 @@ body {
 .daily-block-del:active { opacity: 1; }
 /* Continuation block: colored bar for multi-hour entries */
 .daily-block.continuation-bar {
-  padding: 2px 10px;
-  min-height: 36px;
-  opacity: 0.6;
-  border-left: 3px solid currentColor;
+  padding: 0;
+  margin-bottom: 0;
+  min-height: 38px;
+  opacity: 0.5;
 }
 
 /* Daily Check Section */
@@ -1961,48 +1961,67 @@ function renderDailyTimeline() {
   const dayEntries = dailyEntries.filter(e => e.date === dailyDate);
   const calEntries = dailyCalendarEvents.filter(e => e.date === dailyDate);
 
-  // Build a map: hour -> array of {html, sortKey}
+  // Build set of hours occupied by user entries (for overlap suppression)
+  const userOccupied = new Set();
+  dayEntries.forEach(e => {
+    const startH = Math.floor(e.hour);
+    const endH = (e.endHour !== undefined && e.endHour !== '' && e.endHour !== e.hour) ? Math.ceil(e.endHour) : startH + 1;
+    for (let i = startH; i < endH; i++) { userOccupied.add(i < 0 ? i + 24 : i % 24); }
+  });
+
+  // Build hourMap: hour -> array of html strings
   const hourMap = {};
   DAILY_HOURS.forEach(h => { hourMap[h] = []; });
 
-  // Helper: add blocks for an entry across its hours
-  function addBlocks(e, startHtml, contClass) {
+  function getRange(e) {
     const startH = Math.floor(e.hour);
     const endH = (e.endHour !== undefined && e.endHour !== '' && e.endHour !== e.hour) ? Math.ceil(e.endHour) : startH + 1;
+    return { startH, endH };
+  }
+
+  // Calendar events (skip hours occupied by user entries)
+  calEntries.forEach(e => {
+    const { startH, endH } = getRange(e);
+    const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
+      ? `<div class="daily-block-time">${fmtTime(e.hour)} 〜 ${fmtTime(e.endHour)}</div>`
+      : `<div class="daily-block-time">${fmtTime(e.hour)}</div>`;
+    const calLabel = e.calendarName ? `<span class="daily-cal-label">${escapeHtml(e.calendarName)}</span>` : '';
+
+    DAILY_HOURS.forEach(h => {
+      if (userOccupied.has(h)) return; // user entry overrides calendar here
+      const hOff = toOffset(h);
+      const sOff = toOffset(startH);
+      const eOff = toOffset(endH);
+      if (hOff === sOff) {
+        hourMap[h].push(`<div class="daily-block plan calendar-event">
+          <div class="daily-block-text">${timeLabel}<span class="daily-cal-icon">&#x1F4C5;</span> ${escapeHtml(e.text)}${calLabel}</div>
+        </div>`);
+      } else if (hOff > sOff && hOff < eOff) {
+        hourMap[h].push(`<div class="daily-block plan calendar-event continuation-bar">&nbsp;</div>`);
+      }
+    });
+  });
+
+  // User entries
+  dayEntries.forEach(e => {
+    const { startH, endH } = getRange(e);
+    const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
+      ? `<div class="daily-block-time">${fmtTime(e.hour)} 〜 ${fmtTime(e.endHour)}</div>`
+      : `<div class="daily-block-time">${fmtTime(e.hour)}</div>`;
+
     DAILY_HOURS.forEach(h => {
       const hOff = toOffset(h);
       const sOff = toOffset(startH);
       const eOff = toOffset(endH);
       if (hOff === sOff) {
-        hourMap[h].push(startHtml);
+        hourMap[h].push(`<div class="daily-block ${e.type}" onclick="event.stopPropagation();editDailyEntry(${e.id})">
+          <div class="daily-block-text">${timeLabel}${escapeHtml(e.text)}</div>
+          <button class="daily-block-del" onclick="event.stopPropagation();deleteDailyEntry(${e.id})">x</button>
+        </div>`);
       } else if (hOff > sOff && hOff < eOff) {
-        hourMap[h].push(`<div class="daily-block ${contClass} continuation-bar">&nbsp;</div>`);
+        hourMap[h].push(`<div class="daily-block ${e.type} continuation-bar">&nbsp;</div>`);
       }
     });
-  }
-
-  // Calendar events
-  calEntries.forEach(e => {
-    const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
-      ? `<div class="daily-block-time">${fmtTime(e.hour)} 〜 ${fmtTime(e.endHour)}</div>`
-      : `<div class="daily-block-time">${fmtTime(e.hour)}</div>`;
-    const calLabel = e.calendarName ? `<span class="daily-cal-label">${escapeHtml(e.calendarName)}</span>` : '';
-    const html = `<div class="daily-block plan calendar-event">
-      <div class="daily-block-text">${timeLabel}<span class="daily-cal-icon">&#x1F4C5;</span> ${escapeHtml(e.text)}${calLabel}</div>
-    </div>`;
-    addBlocks(e, html, 'plan calendar-event');
-  });
-
-  // User entries
-  dayEntries.forEach(e => {
-    const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
-      ? `<div class="daily-block-time">${fmtTime(e.hour)} 〜 ${fmtTime(e.endHour)}</div>`
-      : `<div class="daily-block-time">${fmtTime(e.hour)}</div>`;
-    const html = `<div class="daily-block ${e.type}" onclick="event.stopPropagation();editDailyEntry(${e.id})">
-      <div class="daily-block-text">${timeLabel}${escapeHtml(e.text)}</div>
-      <button class="daily-block-del" onclick="event.stopPropagation();deleteDailyEntry(${e.id})">x</button>
-    </div>`;
-    addBlocks(e, html, e.type);
   });
 
   timeline.innerHTML = DAILY_HOURS.map(h => {
@@ -2022,8 +2041,9 @@ function renderDailyCheck() {
   const todayTasks = tasks.filter(t => {
     const progress = t.progress ?? statusToProgress(t.status);
     if (progress === 100) return false;
-    if (!t.due) return false;
-    return t.due <= dailyDate;
+    // Show tasks with due date <= today, OR tasks without due date (all active tasks)
+    if (t.due && t.due > dailyDate) return false;
+    return true;
   });
 
   if (todayTasks.length === 0) {
