@@ -1541,29 +1541,22 @@ function pullFromRemote() {
     .then(r => r.json())
     .then(data => {
       if (data && data.success) {
-        // If local is empty, replace entirely from remote
-        if (data.notes) {
-          if (notes.length === 0 && data.notes.length > 0) {
-            notes = data.notes; localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
-          } else { mergeNotes(data.notes); }
+        // Only restore from remote when local is empty (fresh install / cache cleared)
+        // Never merge into existing local data — local is always authoritative
+        if (data.notes && notes.length === 0 && data.notes.length > 0) {
+          notes = data.notes; localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
           renderNotes();
         }
-        if (data.tasks) {
-          if (tasks.length === 0 && data.tasks.length > 0) {
-            tasks = data.tasks; localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(tasks));
-          } else { mergeTasks(data.tasks); }
+        if (data.tasks && tasks.length === 0 && data.tasks.length > 0) {
+          tasks = data.tasks; localStorage.setItem(TASK_STORAGE_KEY, JSON.stringify(tasks));
           renderTasks();
         }
-        if (data.journal) {
-          if (journalEntries.length === 0 && data.journal.length > 0) {
-            journalEntries = data.journal; localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(journalEntries));
-          } else { mergeJournal(data.journal); }
+        if (data.journal && journalEntries.length === 0 && data.journal.length > 0) {
+          journalEntries = data.journal; localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(journalEntries));
           renderJournalCalendar();
         }
-        if (data.daily) {
-          if (dailyEntries.length === 0 && data.daily.length > 0) {
-            dailyEntries = data.daily; localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify(dailyEntries));
-          } else { mergeDaily(data.daily); }
+        if (data.daily && dailyEntries.length === 0 && data.daily.length > 0) {
+          dailyEntries = data.daily; localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify(dailyEntries));
           renderDaily();
         }
       }
