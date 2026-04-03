@@ -834,20 +834,25 @@ body {
 }
 .daily-block-del:active { opacity: 1; }
 /* Multi-hour spanning block: rendered once at start, overflows into subsequent rows */
+.daily-hour.span-start {
+  overflow: visible;
+}
+.daily-hour.span-start > .daily-hour-content {
+  overflow: visible;
+}
 .daily-block.spanning {
   position: relative;
   z-index: 2;
 }
-/* Continuation hours: minimize row so the spanning block covers it */
+/* Continuation hours: keep space but hide content */
 .daily-hour.continuation-hour {
   border-top: none;
-  min-height: 0;
 }
 .daily-hour.continuation-hour > .daily-hour-content {
-  padding-top: 0;
-  padding-bottom: 0;
   min-height: 44px;
-  visibility: hidden;
+}
+.daily-hour.continuation-hour > .daily-hour-content > * {
+  display: none;
 }
 
 /* Daily Check Section */
@@ -1976,10 +1981,14 @@ function renderDailyTimeline() {
     const nowClass = (isToday && h === currentHour) ? ' now' : '';
     const hasClass = allEntries > 0 ? ' has-entries' : '';
 
-    // Check if only continuation (no block starts here)
-    const hasStart = [...hourCalEntries, ...hourEntries].some(e => Math.floor(e.hour) === h);
+    // Check span/continuation classes
+    const allHere = [...hourCalEntries, ...hourEntries];
+    const hasStart = allHere.some(e => Math.floor(e.hour) === h);
+    const hasSpanStart = allHere.some(e => Math.floor(e.hour) === h && e.endHour !== undefined && e.endHour !== e.hour && entrySpanHours(e) > 1);
     const onlyContinuation = allEntries > 0 && !hasStart;
-    const contClass = onlyContinuation ? ' continuation-hour' : '';
+    let extraClass = '';
+    if (hasSpanStart) extraClass += ' span-start';
+    if (onlyContinuation) extraClass += ' continuation-hour';
 
     let blocksHtml = '';
 
@@ -2011,7 +2020,7 @@ function renderDailyTimeline() {
       </div>`;
     });
 
-    return `<div class="daily-hour${nowClass}${hasClass}${contClass}" onclick="openDailyInput(${h})">
+    return `<div class="daily-hour${nowClass}${hasClass}${extraClass}" onclick="openDailyInput(${h})">
       <div class="daily-hour-label">${h}</div>
       <div class="daily-hour-content">${blocksHtml}</div>
     </div>`;
