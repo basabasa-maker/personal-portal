@@ -1938,8 +1938,8 @@ function toOffset(v) { return v < 4 ? v + 24 : v; }
 function entryCoversHour(e, h) {
   const start = e.hour;
   let end = e.endHour;
-  if (end === undefined || end === '' || end === start) return start === h;
-  const sOff = toOffset(start);
+  if (end === undefined || end === '' || end === start) return Math.floor(start) === h;
+  const sOff = toOffset(Math.floor(start));
   const eOff = toOffset(end);
   const hOff = toOffset(h);
   return hOff >= sOff && hOff < eOff;
@@ -1961,55 +1961,57 @@ function renderDailyTimeline() {
   const dayEntries = dailyEntries.filter(e => e.date === dailyDate);
   const calEntries = dailyCalendarEvents.filter(e => e.date === dailyDate);
 
+  // Build a map: hour -> array of {html, sortKey}
+  const hourMap = {};
+  DAILY_HOURS.forEach(h => { hourMap[h] = []; });
+
+  // Helper: add blocks for an entry across its hours
+  function addBlocks(e, startHtml, contClass) {
+    const startH = Math.floor(e.hour);
+    const endH = (e.endHour !== undefined && e.endHour !== '' && e.endHour !== e.hour) ? Math.ceil(e.endHour) : startH + 1;
+    DAILY_HOURS.forEach(h => {
+      const hOff = toOffset(h);
+      const sOff = toOffset(startH);
+      const eOff = toOffset(endH);
+      if (hOff === sOff) {
+        hourMap[h].push(startHtml);
+      } else if (hOff > sOff && hOff < eOff) {
+        hourMap[h].push(`<div class="daily-block ${contClass} continuation-bar">&nbsp;</div>`);
+      }
+    });
+  }
+
+  // Calendar events
+  calEntries.forEach(e => {
+    const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
+      ? `<div class="daily-block-time">${fmtTime(e.hour)} 〜 ${fmtTime(e.endHour)}</div>`
+      : `<div class="daily-block-time">${fmtTime(e.hour)}</div>`;
+    const calLabel = e.calendarName ? `<span class="daily-cal-label">${escapeHtml(e.calendarName)}</span>` : '';
+    const html = `<div class="daily-block plan calendar-event">
+      <div class="daily-block-text">${timeLabel}<span class="daily-cal-icon">&#x1F4C5;</span> ${escapeHtml(e.text)}${calLabel}</div>
+    </div>`;
+    addBlocks(e, html, 'plan calendar-event');
+  });
+
+  // User entries
+  dayEntries.forEach(e => {
+    const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
+      ? `<div class="daily-block-time">${fmtTime(e.hour)} 〜 ${fmtTime(e.endHour)}</div>`
+      : `<div class="daily-block-time">${fmtTime(e.hour)}</div>`;
+    const html = `<div class="daily-block ${e.type}" onclick="event.stopPropagation();editDailyEntry(${e.id})">
+      <div class="daily-block-text">${timeLabel}${escapeHtml(e.text)}</div>
+      <button class="daily-block-del" onclick="event.stopPropagation();deleteDailyEntry(${e.id})">x</button>
+    </div>`;
+    addBlocks(e, html, e.type);
+  });
+
   timeline.innerHTML = DAILY_HOURS.map(h => {
-    // All entries (user + cal) that cover this hour
-    const hourCalEntries = calEntries.filter(e => entryCoversHour(e, h));
-    const hourEntries = dayEntries.filter(e => entryCoversHour(e, h));
-    const allEntries = hourCalEntries.length + hourEntries.length;
+    const blocks = hourMap[h];
     const nowClass = (isToday && h === currentHour) ? ' now' : '';
-    const hasClass = allEntries > 0 ? ' has-entries' : '';
-
-    let extraClass = '';
-
-    let blocksHtml = '';
-
-    // Calendar events
-    hourCalEntries.forEach(e => {
-      if (Math.floor(e.hour) === h) {
-        // Start hour: full display
-        const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
-          ? `<div class="daily-block-time">${fmtTime(e.hour)} 〜 ${fmtTime(e.endHour)}</div>`
-          : `<div class="daily-block-time">${fmtTime(e.hour)}</div>`;
-        const calLabel = e.calendarName ? `<span class="daily-cal-label">${escapeHtml(e.calendarName)}</span>` : '';
-        blocksHtml += `<div class="daily-block plan calendar-event">
-          <div class="daily-block-text">${timeLabel}<span class="daily-cal-icon">&#x1F4C5;</span> ${escapeHtml(e.text)}${calLabel}</div>
-        </div>`;
-      } else {
-        // Continuation hour: colored bar only
-        blocksHtml += `<div class="daily-block plan calendar-event continuation-bar">&nbsp;</div>`;
-      }
-    });
-
-    // User-created entries
-    hourEntries.forEach(e => {
-      if (Math.floor(e.hour) === h) {
-        // Start hour: full display
-        const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
-          ? `<div class="daily-block-time">${fmtTime(e.hour)} 〜 ${fmtTime(e.endHour)}</div>`
-          : `<div class="daily-block-time">${fmtTime(e.hour)}</div>`;
-        blocksHtml += `<div class="daily-block ${e.type}" onclick="event.stopPropagation();editDailyEntry(${e.id})">
-          <div class="daily-block-text">${timeLabel}${escapeHtml(e.text)}</div>
-          <button class="daily-block-del" onclick="event.stopPropagation();deleteDailyEntry(${e.id})">x</button>
-        </div>`;
-      } else {
-        // Continuation hour: colored bar only
-        blocksHtml += `<div class="daily-block ${e.type} continuation-bar">&nbsp;</div>`;
-      }
-    });
-
-    return `<div class="daily-hour${nowClass}${hasClass}${extraClass}" onclick="openDailyInput(${h})">
+    const hasClass = blocks.length > 0 ? ' has-entries' : '';
+    return `<div class="daily-hour${nowClass}${hasClass}" onclick="openDailyInput(${h})">
       <div class="daily-hour-label">${h}</div>
-      <div class="daily-hour-content">${blocksHtml}</div>
+      <div class="daily-hour-content">${blocks.join('')}</div>
     </div>`;
   }).join('');
 }
