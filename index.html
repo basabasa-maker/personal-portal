@@ -833,26 +833,12 @@ body {
   flex-shrink: 0;
 }
 .daily-block-del:active { opacity: 1; }
-/* Multi-hour spanning block: rendered once at start, overflows into subsequent rows */
-.daily-hour.span-start {
-  overflow: visible;
-}
-.daily-hour.span-start > .daily-hour-content {
-  overflow: visible;
-}
-.daily-block.spanning {
-  position: relative;
-  z-index: 2;
-}
-/* Continuation hours: keep space but hide content */
-.daily-hour.continuation-hour {
-  border-top: none;
-}
-.daily-hour.continuation-hour > .daily-hour-content {
-  min-height: 44px;
-}
-.daily-hour.continuation-hour > .daily-hour-content > * {
-  display: none;
+/* Continuation block: colored bar for multi-hour entries */
+.daily-block.continuation-bar {
+  padding: 2px 10px;
+  min-height: 36px;
+  opacity: 0.6;
+  border-left: 3px solid currentColor;
 }
 
 /* Daily Check Section */
@@ -1511,8 +1497,10 @@ function setupSettings() {
 }
 
 // --- Sync ---
+const DEFAULT_SYNC_URL = 'https://script.google.com/macros/s/AKfycbxJQ_GSE_bJQYZPSvGe4K4Ar4Z65YBOhhFEuoOeRZh9ZNxc7n5ePxpLR5rVjLvcgWaMYg/exec';
+
 function getSyncUrl() {
-  return localStorage.getItem(SYNC_URL_KEY) || '';
+  return localStorage.getItem(SYNC_URL_KEY) || DEFAULT_SYNC_URL;
 }
 
 function syncToRemote() {
@@ -1981,43 +1969,42 @@ function renderDailyTimeline() {
     const nowClass = (isToday && h === currentHour) ? ' now' : '';
     const hasClass = allEntries > 0 ? ' has-entries' : '';
 
-    // Check span/continuation classes
-    const allHere = [...hourCalEntries, ...hourEntries];
-    const hasStart = allHere.some(e => Math.floor(e.hour) === h);
-    const hasSpanStart = allHere.some(e => Math.floor(e.hour) === h && e.endHour !== undefined && e.endHour !== e.hour && entrySpanHours(e) > 1);
-    const onlyContinuation = allEntries > 0 && !hasStart;
     let extraClass = '';
-    if (hasSpanStart) extraClass += ' span-start';
-    if (onlyContinuation) extraClass += ' continuation-hour';
 
     let blocksHtml = '';
 
-    // Calendar events — only render at start hour
+    // Calendar events
     hourCalEntries.forEach(e => {
-      if (Math.floor(e.hour) !== h) return; // skip continuation
-      const span = entrySpanHours(e);
-      const spanStyle = span > 1 ? ` spanning" style="height:${span * 44 - 4}px` : '';
-      const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
-        ? `<div class="daily-block-time">${fmtTime(e.hour)} 〜 ${fmtTime(e.endHour)}</div>`
-        : `<div class="daily-block-time">${fmtTime(e.hour)}</div>`;
-      const calLabel = e.calendarName ? `<span class="daily-cal-label">${escapeHtml(e.calendarName)}</span>` : '';
-      blocksHtml += `<div class="daily-block plan calendar-event${spanStyle}">
-        <div class="daily-block-text">${timeLabel}<span class="daily-cal-icon">&#x1F4C5;</span> ${escapeHtml(e.text)}${calLabel}</div>
-      </div>`;
+      if (Math.floor(e.hour) === h) {
+        // Start hour: full display
+        const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
+          ? `<div class="daily-block-time">${fmtTime(e.hour)} 〜 ${fmtTime(e.endHour)}</div>`
+          : `<div class="daily-block-time">${fmtTime(e.hour)}</div>`;
+        const calLabel = e.calendarName ? `<span class="daily-cal-label">${escapeHtml(e.calendarName)}</span>` : '';
+        blocksHtml += `<div class="daily-block plan calendar-event">
+          <div class="daily-block-text">${timeLabel}<span class="daily-cal-icon">&#x1F4C5;</span> ${escapeHtml(e.text)}${calLabel}</div>
+        </div>`;
+      } else {
+        // Continuation hour: colored bar only
+        blocksHtml += `<div class="daily-block plan calendar-event continuation-bar">&nbsp;</div>`;
+      }
     });
 
-    // User-created entries — only render at start hour
+    // User-created entries
     hourEntries.forEach(e => {
-      if (Math.floor(e.hour) !== h) return; // skip continuation
-      const span = entrySpanHours(e);
-      const spanStyle = span > 1 ? ` spanning" style="height:${span * 44 - 4}px` : '';
-      const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
-        ? `<div class="daily-block-time">${fmtTime(e.hour)} 〜 ${fmtTime(e.endHour)}</div>`
-        : `<div class="daily-block-time">${fmtTime(e.hour)}</div>`;
-      blocksHtml += `<div class="daily-block ${e.type}${spanStyle}" onclick="event.stopPropagation();editDailyEntry(${e.id})">
-        <div class="daily-block-text">${timeLabel}${escapeHtml(e.text)}</div>
-        <button class="daily-block-del" onclick="event.stopPropagation();deleteDailyEntry(${e.id})">x</button>
-      </div>`;
+      if (Math.floor(e.hour) === h) {
+        // Start hour: full display
+        const timeLabel = e.endHour !== undefined && e.endHour !== e.hour
+          ? `<div class="daily-block-time">${fmtTime(e.hour)} 〜 ${fmtTime(e.endHour)}</div>`
+          : `<div class="daily-block-time">${fmtTime(e.hour)}</div>`;
+        blocksHtml += `<div class="daily-block ${e.type}" onclick="event.stopPropagation();editDailyEntry(${e.id})">
+          <div class="daily-block-text">${timeLabel}${escapeHtml(e.text)}</div>
+          <button class="daily-block-del" onclick="event.stopPropagation();deleteDailyEntry(${e.id})">x</button>
+        </div>`;
+      } else {
+        // Continuation hour: colored bar only
+        blocksHtml += `<div class="daily-block ${e.type} continuation-bar">&nbsp;</div>`;
+      }
     });
 
     return `<div class="daily-hour${nowClass}${hasClass}${extraClass}" onclick="openDailyInput(${h})">
