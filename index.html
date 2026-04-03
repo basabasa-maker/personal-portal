@@ -833,12 +833,33 @@ body {
   flex-shrink: 0;
 }
 .daily-block-del:active { opacity: 1; }
+/* Continuation hour row: remove border/padding to connect bars */
+.daily-hour.continuation-hour {
+  border-top: none;
+}
+.daily-hour.continuation-hour > .daily-hour-content {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+/* Start hour: remove bottom padding so it connects to continuation */
+.daily-hour.span-start > .daily-hour-content {
+  padding-bottom: 0;
+}
+.daily-hour.span-start .daily-block {
+  margin-bottom: 0;
+  border-radius: 6px 6px 0 0;
+}
 /* Continuation block: colored bar for multi-hour entries */
 .daily-block.continuation-bar {
   padding: 0;
   margin-bottom: 0;
-  min-height: 38px;
+  min-height: 44px;
+  border-radius: 0;
   opacity: 0.5;
+}
+/* Last continuation row: round bottom */
+.daily-hour.span-end .daily-block.continuation-bar {
+  border-radius: 0 0 6px 6px;
 }
 
 /* Daily Check Section */
@@ -2024,11 +2045,30 @@ function renderDailyTimeline() {
     });
   });
 
+  // Build sets for span classes: which hours are start/continuation/end of multi-hour blocks
+  const spanStartHours = new Set();
+  const contHours = new Set();
+  const spanEndHours = new Set();
+  [...calEntries, ...dayEntries].forEach(e => {
+    const { startH, endH } = getRange(e);
+    if (endH - startH <= 1) return; // single hour, no spanning
+    for (let i = startH; i < endH; i++) {
+      const hr = i < 0 ? i + 24 : i % 24;
+      if (i === startH) { spanStartHours.add(hr); }
+      else if (i === endH - 1) { contHours.add(hr); spanEndHours.add(hr); }
+      else { contHours.add(hr); }
+    }
+  });
+
   timeline.innerHTML = DAILY_HOURS.map(h => {
     const blocks = hourMap[h];
     const nowClass = (isToday && h === currentHour) ? ' now' : '';
     const hasClass = blocks.length > 0 ? ' has-entries' : '';
-    return `<div class="daily-hour${nowClass}${hasClass}" onclick="openDailyInput(${h})">
+    let spanClass = '';
+    if (spanStartHours.has(h)) spanClass += ' span-start';
+    if (contHours.has(h) && !spanStartHours.has(h)) spanClass += ' continuation-hour';
+    if (spanEndHours.has(h)) spanClass += ' span-end';
+    return `<div class="daily-hour${nowClass}${hasClass}${spanClass}" onclick="openDailyInput(${h})">
       <div class="daily-hour-label">${h}</div>
       <div class="daily-hour-content">${blocks.join('')}</div>
     </div>`;
