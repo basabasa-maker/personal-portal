@@ -1577,7 +1577,7 @@ function testConnection() {
   status.textContent = '接続中...';
   status.className = 'sync-status';
   status.style.display = 'block';
-  fetch(url + '?type=test', { redirect: 'follow' })
+  fetch(url + '?type=test', { mode: 'cors', redirect: 'follow' })
     .then(r => r.json())
     .then(data => {
       if (data && data.success) {
