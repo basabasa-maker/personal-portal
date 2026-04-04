@@ -3,23 +3,22 @@
   <rect width="512" height="512" rx="96" fill="#ffffff"/>
 
   <!-- Moleskine notebook body -->
-  <rect x="96" y="56" width="320" height="400" rx="12" fill="#1e3a5f"/>
+  <rect x="80" y="48" width="340" height="416" rx="14" fill="#1e3a5f"/>
 
   <!-- Notebook spine/band -->
-  <rect x="96" y="56" width="28" height="400" rx="6" fill="#152c4a"/>
+  <rect x="80" y="48" width="30" height="416" rx="7" fill="#152c4a"/>
 
   <!-- Elastic band (horizontal) -->
-  <rect x="96" y="340" width="320" height="4" fill="#2a4d7a" rx="2"/>
+  <rect x="80" y="348" width="340" height="4" fill="#2a4d7a" rx="2"/>
 
   <!-- Label area (cream colored rectangle) -->
-  <rect x="156" y="120" width="220" height="80" rx="4" fill="#f5f0e8"/>
+  <rect x="148" y="100" width="236" height="88" rx="4" fill="#f5f0e8"/>
 
-  <!-- Inner lines on label -->
-  <line x1="168" y1="148" x2="364" y2="148" stroke="#d0c8b8" stroke-width="1"/>
-  <line x1="168" y1="168" x2="364" y2="168" stroke="#d0c8b8" stroke-width="1"/>
-  <line x1="168" y1="188" x2="300" y2="188" stroke="#d0c8b8" stroke-width="1"/>
+  <!-- Inner lines on label (planner lines) -->
+  <line x1="160" y1="128" x2="372" y2="128" stroke="#d0c8b8" stroke-width="1.5"/>
+  <line x1="160" y1="150" x2="372" y2="150" stroke="#d0c8b8" stroke-width="1.5"/>
+  <line x1="160" y1="172" x2="310" y2="172" stroke="#d0c8b8" stroke-width="1.5"/>
 
-  <!-- Checkmark in top-right -->
-  <circle cx="380" cy="96" r="28" fill="#ffffff" opacity="0.9"/>
-  <polyline points="364,96 376,108 396,84" fill="none" stroke="#1e3a5f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Large checkmark — タスク管理を象徴 -->
+  <polyline points="270,280 320,340 400,220" fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
 </svg>
