@@ -159,6 +159,8 @@ body {
   padding: 14px 16px;
   margin-bottom: 10px;
   box-shadow: var(--shadow);
+  overflow: hidden;
+  max-width: 100%;
   position: relative;
 }
 .note-item.read { opacity: 0.6; }
@@ -188,6 +190,8 @@ body {
   overflow: hidden;
   max-height: 100px;
   position: relative;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 .note-item-body.expanded { max-height: none; }
 .note-item-body h3 {
@@ -208,11 +212,14 @@ body {
   border-collapse: collapse;
   margin: 8px 0;
   font-size: 13px;
+  table-layout: fixed;
 }
 .note-item-body table th, .note-item-body table td {
   border: 1px solid var(--border);
   padding: 4px 8px;
   text-align: left;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 .note-item-body table th {
   background: var(--bg);
@@ -312,6 +319,8 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 10px;
+  overflow: hidden;
+  max-width: 100%;
 }
 .task-item.done { opacity: 0.5; }
 .task-item.done .task-title { text-decoration: line-through; }
@@ -2490,23 +2499,6 @@ window.PortalAPI = {
     saveDaily(); renderDaily();
   },
 };
-
-// --- Prevent horizontal bounce on iOS ---
-(function() {
-  let startX = 0;
-  let startY = 0;
-  document.addEventListener('touchstart', function(e) {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-  }, { passive: true });
-  document.addEventListener('touchmove', function(e) {
-    const dx = Math.abs(e.touches[0].clientX - startX);
-    const dy = Math.abs(e.touches[0].clientY - startY);
-    if (dx > dy) {
-      e.preventDefault();
-    }
-  }, { passive: false });
-})();
 
 // --- Start ---
 document.addEventListener('DOMContentLoaded', init);
