@@ -30,6 +30,11 @@
   --red-text: #c0392b;
   --shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
+html {
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  -webkit-overflow-scrolling: touch;
+}
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Hiragino Sans', sans-serif;
   background: var(--bg);
@@ -37,9 +42,9 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
-}
-html {
-  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  position: relative;
+  width: 100%;
 }
 
 /* === Header === */
@@ -113,6 +118,8 @@ html {
   padding-top: 100px;
   padding-bottom: 80px;
   min-height: 100vh;
+  overflow-x: hidden;
+  touch-action: pan-y;
 }
 .tab-content {
   display: none;
