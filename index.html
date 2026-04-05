@@ -30,21 +30,12 @@
   --red-text: #c0392b;
   --shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
-html {
-  overflow-x: hidden;
-  overscroll-behavior-x: none;
-  -webkit-overflow-scrolling: touch;
-}
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', 'Hiragino Sans', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-  overscroll-behavior-x: none;
-  position: relative;
-  width: 100%;
 }
 
 /* === Header === */
@@ -118,13 +109,10 @@ body {
   padding-top: 100px;
   padding-bottom: 80px;
   min-height: 100vh;
-  overflow-x: hidden;
-  touch-action: pan-y;
 }
 .tab-content {
   display: none;
   padding: 16px;
-  overflow-x: hidden;
 }
 .tab-content.active { display: block; }
 
@@ -159,8 +147,6 @@ body {
   padding: 14px 16px;
   margin-bottom: 10px;
   box-shadow: var(--shadow);
-  overflow: hidden;
-  max-width: 100%;
   position: relative;
 }
 .note-item.read { opacity: 0.6; }
@@ -190,8 +176,6 @@ body {
   overflow: hidden;
   max-height: 100px;
   position: relative;
-  word-break: break-word;
-  overflow-wrap: break-word;
 }
 .note-item-body.expanded { max-height: none; }
 .note-item-body h3 {
@@ -212,14 +196,11 @@ body {
   border-collapse: collapse;
   margin: 8px 0;
   font-size: 13px;
-  table-layout: fixed;
 }
 .note-item-body table th, .note-item-body table td {
   border: 1px solid var(--border);
   padding: 4px 8px;
   text-align: left;
-  word-break: break-word;
-  overflow-wrap: break-word;
 }
 .note-item-body table th {
   background: var(--bg);
@@ -319,8 +300,6 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  overflow: hidden;
-  max-width: 100%;
 }
 .task-item.done { opacity: 0.5; }
 .task-item.done .task-title { text-decoration: line-through; }
@@ -1225,7 +1204,6 @@ body {
   </div>
 </div>
 <button class="settings-fab" id="settingsBtn">⚙</button>
-<button onclick="(function(){var vw=document.documentElement.clientWidth;var results=[];document.querySelectorAll('*').forEach(function(el){var r=el.getBoundingClientRect();if(r.width>vw){results.push(el.tagName+'.'+el.className.split(' ')[0]+' w='+Math.round(r.width)+'px');}});alert(results.length?results.join('\n'):'はみ出し要素なし (vw='+vw+')');})()" style="position:fixed;bottom:90px;left:16px;z-index:9999;background:red;color:white;border:none;border-radius:8px;padding:8px 12px;font-size:12px;">DEBUG</button>
 
 <!-- Task Form Modal -->
 <div class="modal-overlay task-form-modal" id="taskFormModal">
