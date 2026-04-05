@@ -1225,6 +1225,7 @@ body {
   </div>
 </div>
 <button class="settings-fab" id="settingsBtn">⚙</button>
+<button onclick="(function(){var vw=document.documentElement.clientWidth;var results=[];document.querySelectorAll('*').forEach(function(el){var r=el.getBoundingClientRect();if(r.width>vw){results.push(el.tagName+'.'+el.className.split(' ')[0]+' w='+Math.round(r.width)+'px');}});alert(results.length?results.join('\n'):'はみ出し要素なし (vw='+vw+')');})()" style="position:fixed;bottom:90px;left:16px;z-index:9999;background:red;color:white;border:none;border-radius:8px;padding:8px 12px;font-size:12px;">DEBUG</button>
 
 <!-- Task Form Modal -->
 <div class="modal-overlay task-form-modal" id="taskFormModal">
